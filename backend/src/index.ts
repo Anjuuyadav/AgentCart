@@ -5,8 +5,18 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { testConnection, closePool } from './config/database.js';
+import { responseWrapper } from './middleware/responseWrapper.js';
+import { demoSessionMiddleware } from './middleware/demoSession.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+
 import { healthRouter } from './routes/health.js';
-import { v1Router } from './routes/api.js';
+import { productRouter } from './routes/products.js';
+import { inventoryRouter } from './routes/inventory.js';
+import { cartRouter } from './routes/cart.js';
+import { orderRouter } from './routes/orders.js';
+import { buyerRouter } from './routes/buyer.js';
+import { aiRouter } from './routes/ai.js';
+import { purchasePolicyRouter } from './routes/purchasePolicy.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +26,7 @@ dotenv.config({ path: path.join(projectRoot, '.env') });
 
 const PORT = parseInt(process.env.PORT || '4000', 10);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+const API_PREFIX = '/api';
 
 function createApp(): Express {
   const app = express();
@@ -28,40 +39,52 @@ function createApp(): Express {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
 
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    if (process.env.NODE_ENV !== 'production' && !req.path.startsWith('/health')) {
-      // noop for phase 1; expand in later phases
-    }
-    next();
-  });
+  app.use(responseWrapper);
 
   app.get('/', (_req: Request, res: Response) => {
     res.json({
       name: 'AgentCart Backend',
-      phase: 1,
-      docs: 'Visit /health for status, /health/db for database connectivity.',
+      phase: 2,
+      docs: 'Visit /api/health for status, /api/health/db for database connectivity.',
+      endpoints: {
+        products: 'GET /api/products, GET /api/products/:id, GET /api/products/:id/variants',
+        inventory: 'GET /api/inventory, GET /api/inventory/:productId',
+        cart: 'GET /api/cart, POST /api/cart/items, PATCH /api/cart/items/:id, DELETE /api/cart/items/:id, DELETE /api/cart',
+        orders: 'GET /api/orders, GET /api/orders/:id, POST /api/orders',
+        buyer: 'GET /api/buyer/preferences, PATCH /api/buyer/preferences',
+        ai: 'POST /api/ai/sessions, GET /api/ai/sessions/:id, POST /api/ai/sessions/:id/actions',
+        purchasePolicy: 'GET /api/purchase-policy, POST /api/purchase-policy/evaluate',
+        health: 'GET /api/health, GET /api/health/db',
+      },
     });
   });
 
   app.use('/health', healthRouter);
-  app.use('/api/v1', v1Router);
+  app.use(`${API_PREFIX}/health`, healthRouter);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('[SERVER ERROR]', err);
-    res.status(err.status || 500).json({
-      ok: false,
-      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+  app.use(demoSessionMiddleware);
+
+  app.use(`${API_PREFIX}/products`, productRouter);
+  app.use(`${API_PREFIX}/inventory`, inventoryRouter);
+  app.use(`${API_PREFIX}/cart`, cartRouter);
+  app.use(`${API_PREFIX}/orders`, orderRouter);
+  app.use(`${API_PREFIX}/buyer`, buyerRouter);
+  app.use(`${API_PREFIX}/ai`, aiRouter);
+  app.use(`${API_PREFIX}/purchase-policy`, purchasePolicyRouter);
+
+  app.use('/api/v1', (_req, res) => {
+    res.status(308).json({
+      success: false,
+      error: {
+        message: 'Phase 2 uses /api prefix. See / for endpoint documentation.',
+        code: 'MOVED_PERMANENTLY',
+        newPrefix: API_PREFIX,
+      },
     });
   });
 
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({
-      ok: false,
-      error: 'Not found',
-      route: _req.originalUrl,
-      method: _req.method,
-    });
-  });
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   return app;
 }
@@ -75,9 +98,10 @@ if (process.argv[1]?.endsWith('index.ts') || import.meta.url.endsWith('index.ts'
     console.log('\n========================================');
     console.log('  AgentCart Backend Server');
     console.log('========================================');
-    console.log(`  Phase: 1 (Foundation)`);
+    console.log(`  Phase: 2 (Core REST API)`);
     console.log(`  Mode:  ${process.env.NODE_ENV || 'development'}`);
     console.log(`  URL:   http://localhost:${PORT}`);
+    console.log(`  API:   http://localhost:${PORT}${API_PREFIX}`);
     console.log(`  CORS:  ${CORS_ORIGIN}`);
     console.log('========================================\n');
 
@@ -90,10 +114,28 @@ if (process.argv[1]?.endsWith('index.ts') || import.meta.url.endsWith('index.ts'
     }
 
     console.log('Available endpoints:');
-    console.log('  GET /                  — Server info');
-    console.log('  GET /health            — Health check + table counts');
-    console.log('  GET /health/db         — Database connectivity');
-    console.log('  GET /api/v1/products   — Placeholder (501) — Phase 2\n');
+    console.log(`  GET  ${API_PREFIX}/health              — Health + table counts`);
+    console.log(`  GET  ${API_PREFIX}/health/db           — Database connectivity`);
+    console.log(`  GET  ${API_PREFIX}/products            — List products (query: category, minPrice, maxPrice, size, color, search, sort, limit, offset)`);
+    console.log(`  GET  ${API_PREFIX}/products/:id        — Get product + variants`);
+    console.log(`  GET  ${API_PREFIX}/products/:id/variants — Get product variants`);
+    console.log(`  GET  ${API_PREFIX}/inventory           — List all inventory`);
+    console.log(`  GET  ${API_PREFIX}/inventory/:productId — Inventory for product`);
+    console.log(`  GET  ${API_PREFIX}/cart                — Get active cart`);
+    console.log(`  POST ${API_PREFIX}/cart/items          — Add item to cart`);
+    console.log(`  PATCH ${API_PREFIX}/cart/items/:id     — Update cart item quantity`);
+    console.log(`  DELETE ${API_PREFIX}/cart/items/:id    — Remove item from cart`);
+    console.log(`  DELETE ${API_PREFIX}/cart              — Clear cart`);
+    console.log(`  GET  ${API_PREFIX}/orders              — List orders`);
+    console.log(`  GET  ${API_PREFIX}/orders/:id          — Get order by ID or number`);
+    console.log(`  POST ${API_PREFIX}/orders              — Create order from cart`);
+    console.log(`  GET  ${API_PREFIX}/buyer/preferences   — Get buyer preferences`);
+    console.log(`  PATCH ${API_PREFIX}/buyer/preferences  — Update buyer preferences`);
+    console.log(`  POST ${API_PREFIX}/ai/sessions         — Create AI session`);
+    console.log(`  GET  ${API_PREFIX}/ai/sessions/:id     — Get AI session`);
+    console.log(`  POST ${API_PREFIX}/ai/sessions/:id/actions — Record AI action`);
+    console.log(`  GET  ${API_PREFIX}/purchase-policy     — Get latest purchase policy`);
+    console.log(`  POST ${API_PREFIX}/purchase-policy/evaluate — Evaluate purchase policy\n`);
   });
 
   const shutdown = async (signal: string) => {
