@@ -3,7 +3,7 @@ import { Menu, X, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
 import { Logo } from './Logo';
 import { Button } from '../ui/Button';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/useApp';
 
 const navLinks = [
   { to: '/how-it-works', label: 'How It Works' },

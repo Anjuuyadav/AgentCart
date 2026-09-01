@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { AIInsightCard } from '../../components/ai/AIComponents';
 import { formatPrice, aiInsights, products, categoryLabels } from '../../data/mockData';
 import { merchantService } from '../../services';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/useApp';
 
 function MetricCard({ label, value, icon: Icon, highlight }: { label: string; value: string; icon: React.ElementType; highlight?: boolean }) {
   return (

@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Bot, ShoppingBag, ShoppingCart, Package, Settings, Moon, Sun, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { Logo } from './Logo';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/useApp';
 
 const navLinks = [
   { to: '/buyer', label: 'AI Buyer', icon: Bot },

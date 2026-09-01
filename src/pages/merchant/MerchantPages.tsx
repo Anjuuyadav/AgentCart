@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { AIInsightCard, AIStatus } from '../../components/ai/AIComponents';
 import { formatPrice, aiInsights, getProductById, aiRecommendations as initialRecs, aiBuyerActivities, auditEvents } from '../../data/mockData';
 import { analyticsService, aiMerchantService, recommendationService } from '../../services';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/useApp';
 
 export function AnalyticsPage() {
   const data = analyticsService.getData();

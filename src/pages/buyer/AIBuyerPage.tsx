@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Bot, Sparkles, Check, Loader2 } from 'lucide-react';
+import { Send, Bot, Sparkles, Check, Loader2, AlertCircle } from 'lucide-react';
 import { BuyerLayout } from '../../components/layout/BuyerLayout';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { AIBadge, AIStatus } from '../../components/ai/AIComponents';
 import { Badge } from '../../components/ui/Badge';
-import { useApp } from '../../contexts/AppContext';
-import { aiBuyerService } from '../../services/productService';
-import { getProductById, DEMO_QUERY } from '../../data/mockData';
-import type { ChatMessage, BuyerRequirements } from '../../types';
+import { useApp } from '../../contexts/useApp';
+import { aiBuyerService, productService } from '../../services/productService';
+import { DEMO_QUERY, formatPrice } from '../../services';
+import type { ChatMessage, BuyerRequirements, Product } from '../../types';
 
 function RequirementsDisplay({ requirements }: { requirements: BuyerRequirements }) {
   return (
@@ -92,6 +92,14 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
+interface RecommendedProductState {
+  loading: boolean;
+  error: string | null;
+  product: Product | null;
+  aiMatchScore?: number;
+  aiReasons?: string[];
+}
+
 export function AIBuyerPage() {
   const [input, setInput] = useState('');
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
@@ -99,12 +107,75 @@ export function AIBuyerPage() {
   const [localProductIds, setLocalProductIds] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [recommendations, setRecommendations] = useState<Map<string, RecommendedProductState>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { setRequirements, setRecommendedProductIds } = useApp();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [localMessages, showRecommendations]);
+  }, [localMessages, showRecommendations, recommendations]);
+
+  useEffect(() => {
+    if (!showRecommendations || localProductIds.length === 0) return;
+
+    let cancelled = false;
+
+    const loadProducts = async () => {
+      const next = new Map<string, RecommendedProductState>();
+      for (const id of localProductIds) {
+        next.set(id, { loading: true, error: null, product: null });
+      }
+      setRecommendations(next);
+
+      const matchScores: Record<string, number> = {};
+      const reasons: Record<string, string[]> = {};
+      if (localRequirements && localProductIds.length) {
+        try {
+          localProductIds.forEach((pid, idx) => {
+            matchScores[pid] = Math.max(70, 95 - idx * 7);
+            reasons[pid] = [
+              localRequirements.occasion ? `Matches ${localRequirements.occasion} occasion` : 'Highly rated',
+              localRequirements.budget ? `Within ₹${localRequirements.budget.toLocaleString('en-IN')} budget` : 'Great value',
+            ];
+          });
+        } catch { /* noop */ }
+      }
+
+      for (const id of localProductIds) {
+        if (cancelled) return;
+        try {
+          const product = await productService.getById(id);
+          if (cancelled) return;
+          setRecommendations((prev) => {
+            const copy = new Map(prev);
+            copy.set(id, {
+              loading: false,
+              error: null,
+              product: product || null,
+              aiMatchScore: matchScores[id],
+              aiReasons: reasons[id],
+            });
+            return copy;
+          });
+        } catch (err: any) {
+          if (cancelled) return;
+          setRecommendations((prev) => {
+            const copy = new Map(prev);
+            copy.set(id, {
+              loading: false,
+              error: err?.message || 'Unable to load product',
+              product: null,
+              aiMatchScore: matchScores[id],
+            });
+            return copy;
+          });
+        }
+      }
+    };
+
+    loadProducts();
+    return () => { cancelled = true; };
+  }, [showRecommendations, localProductIds, localRequirements]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +192,7 @@ export function AIBuyerPage() {
     setInput('');
     setProcessing(true);
     setShowRecommendations(false);
+    setRecommendations(new Map());
 
     try {
       for (const step of ['Understanding your requirements...', 'Searching AgentCart...']) {
@@ -155,7 +227,9 @@ export function AIBuyerPage() {
     }
   };
 
-  const recommendedProducts = localProductIds.map((id) => getProductById(id)).filter(Boolean);
+  const recommendedList = localProductIds
+    .map((id) => ({ id, state: recommendations.get(id) }))
+    .filter((entry) => entry.state);
 
   return (
     <BuyerLayout>
@@ -223,41 +297,88 @@ export function AIBuyerPage() {
             </Card>
           )}
 
-          {showRecommendations && recommendedProducts.length > 0 && (
+          {showRecommendations && (
             <div className="animate-fade-in">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-semibold">Recommendations</h3>
-                <AIBadge>{recommendedProducts.length} matches</AIBadge>
+                <AIBadge>{localProductIds.length} matches</AIBadge>
               </div>
-              <div className="space-y-4">
-                {recommendedProducts.map((product) => product && (
-                  <Card key={product.id} hover padding="sm" className="overflow-hidden">
-                    <div className="flex gap-4">
-                      <Link to={`/product/${product.id}`} className="shrink-0">
-                        <img src={product.image} alt={product.name} className="h-24 w-20 rounded-lg object-cover" />
-                      </Link>
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          {product.aiMatchScore && <Badge variant="ai">{product.aiMatchScore}% match</Badge>}
+              {recommendedList.length === 0 ? (
+                <Card>
+                  <p className="text-sm text-muted">No recommendations yet.</p>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {recommendedList.map(({ id, state }) => {
+                    if (!state) return null;
+                    if (state.loading) {
+                      return (
+                        <Card key={id} padding="sm" className="overflow-hidden">
+                          <div className="flex gap-4 animate-pulse">
+                            <div className="h-24 w-20 rounded-lg bg-border/50 dark:bg-border-dark/50" />
+                            <div className="flex-1 space-y-2 py-1">
+                              <div className="h-4 w-3/4 rounded bg-border/60 dark:bg-border-dark/60" />
+                              <div className="h-5 w-1/3 rounded bg-border/60 dark:bg-border-dark/60" />
+                              <div className="h-3 w-1/2 rounded bg-border/40 dark:bg-border-dark/40" />
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    }
+                    if (state.error || !state.product) {
+                      return (
+                        <Card key={id} padding="sm" className="overflow-hidden">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="mt-0.5 h-4 w-4 text-muted shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium">Product unavailable</p>
+                              <p className="text-xs text-muted">
+                                {state.error || 'This recommendation could not be loaded.'}
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    }
+                    const product = state.product;
+                    return (
+                      <Card key={id} hover padding="sm" className="overflow-hidden">
+                        <div className="flex gap-4">
+                          <Link to={`/product/${product.id}`} className="shrink-0">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="h-24 w-20 rounded-lg object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                              }}
+                            />
+                          </Link>
+                          <div className="flex-1 min-w-0">
+                            <div className="mb-1 flex items-center gap-2">
+                              {state.aiMatchScore && <Badge variant="ai">{state.aiMatchScore}% match</Badge>}
+                            </div>
+                            <Link to={`/product/${product.id}`}>
+                              <h4 className="font-medium hover:text-violet-ai truncate">{product.name}</h4>
+                            </Link>
+                            <p className="text-lg font-semibold">{formatPrice(product.price)}</p>
+                            {state.aiReasons && state.aiReasons.length > 0 && (
+                              <ul className="mt-2 space-y-0.5">
+                                {state.aiReasons.slice(0, 2).map((r, idx) => (
+                                  <li key={idx} className="flex items-center gap-1 text-xs text-muted dark:text-muted-light">
+                                    <Check className="h-3 w-3 text-success shrink-0" />
+                                    <span className="truncate">{r}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
                         </div>
-                        <Link to={`/product/${product.id}`}>
-                          <h4 className="font-medium hover:text-violet-ai">{product.name}</h4>
-                        </Link>
-                        <p className="text-lg font-semibold">₹{product.price.toLocaleString('en-IN')}</p>
-                        {product.aiReasons && (
-                          <ul className="mt-2 space-y-0.5">
-                            {product.aiReasons.slice(0, 2).map((r) => (
-                              <li key={r} className="flex items-center gap-1 text-xs text-muted dark:text-muted-light">
-                                <Check className="h-3 w-3 text-success" /> {r}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Heart, GitCompare, Star } from 'lucide-react';
 import type { Product } from '../../types';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../services';
 import { AIBadge, AIMatchScore } from '../ai/AIComponents';
 import { Badge } from '../ui/Badge';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/useApp';
 
 interface ProductCardProps {
   product: Product;

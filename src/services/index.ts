@@ -1,82 +1,28 @@
-export { productService } from './productService';
-export { aiBuyerService } from './productService';
+export { productService, inventoryService, aiBuyerService } from './productService';
+export { cartService } from './cartService';
+export { orderService } from './orderService';
+export { preferencesService } from './preferencesService';
+export { purchasePolicyService } from './purchasePolicyService';
+export { aiSessionService } from './aiSessionService';
+export { apiClient, getUserFriendlyMessage } from './apiClient';
 
-import { aiRecommendations, aiInsights, auditEvents, merchantMetrics, analyticsData, aiBuyerActivities } from '../data/mockData';
-import type { Order, AIRecommendation } from '../types';
-import { getProductById } from '../data/mockData';
+import { products as mockProducts, aiRecommendations, aiInsights, auditEvents, merchantMetrics, analyticsData, aiBuyerActivities, getProductById as mockGetProductById, formatPrice, categoryLabels, CROSS_SELL_PRODUCT_ID, FEATURED_PRODUCT_ID, DEMO_QUERY } from '../data/mockData';
+import type { Order, AIRecommendation, AIInsight, AuditEvent, AnalyticsData, MerchantMetrics, AIBuyerActivity, UserPreferences } from '../types';
+import { orderService as backendOrderService } from './orderService';
+
+let inMemoryOrders: Order[] = [];
+let recommendations = [...aiRecommendations];
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-let orders: Order[] = [];
-let recommendations = [...aiRecommendations];
+export { formatPrice, categoryLabels, CROSS_SELL_PRODUCT_ID, FEATURED_PRODUCT_ID, DEMO_QUERY };
+export const getProductById = mockGetProductById;
 
-export const orderService = {
-  getAll(): Order[] {
-    return orders;
-  },
+export { merchantService, recommendationService, analyticsService, auditService, aiMerchantService, aiBuyerActivityService, authService, paymentService };
 
-  getById(id: string): Order | undefined {
-    return orders.find((o) => o.id === id || o.orderNumber === id);
-  },
-
-  async createOrder(data: {
-    productId: string;
-    quantity: number;
-    size: string;
-    color: string;
-    customerName: string;
-    customerEmail: string;
-    shippingAddress: string;
-    isAiBuyerOrder?: boolean;
-    aiMatchScore?: number;
-  }): Promise<Order> {
-    await delay(1500);
-    const product = getProductById(data.productId);
-    if (!product) throw new Error('Product not found');
-
-    const order: Order = {
-      id: `order-${Date.now()}`,
-      orderNumber: `AC-${10429 + orders.length}`,
-      productId: data.productId,
-      productName: product.name,
-      productImage: product.image,
-      amount: product.price * data.quantity,
-      quantity: data.quantity,
-      size: data.size,
-      color: data.color,
-      status: 'confirmed',
-      paymentStatus: 'success',
-      createdAt: new Date(),
-      customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      shippingAddress: data.shippingAddress,
-      isAiBuyerOrder: data.isAiBuyerOrder ?? false,
-      aiMatchScore: data.aiMatchScore,
-      timeline: [
-        { id: 't1', label: 'Order Placed', timestamp: new Date(), status: 'completed' },
-        { id: 't2', label: 'Payment Confirmed', timestamp: new Date(), status: 'completed' },
-        { id: 't3', label: 'Processing', timestamp: new Date(), status: 'current' },
-        { id: 't4', label: 'Shipped', timestamp: new Date(), status: 'pending' },
-        { id: 't5', label: 'Delivered', timestamp: new Date(), status: 'pending' },
-      ],
-    };
-
-    orders = [order, ...orders];
-    return order;
-  },
-
-  getLatestOrder(): Order | undefined {
-    return orders[0];
-  },
-
-  hasOrders(): boolean {
-    return orders.length > 0;
-  },
-};
-
-export const paymentService = {
+const paymentService = {
   async processPayment(_amount: number): Promise<{ success: boolean; transactionId: string }> {
-    await delay(2000);
+    await delay(1500);
     return {
       success: true,
       transactionId: `rzp_test_${Date.now()}`,
@@ -84,24 +30,24 @@ export const paymentService = {
   },
 };
 
-export const merchantService = {
+const merchantService = {
   getMetrics() {
-    const latestOrder = orderService.getLatestOrder();
+    const latest = inMemoryOrders[0];
     return {
       ...merchantMetrics,
-      aiAttributedRevenue: latestOrder?.isAiBuyerOrder ? latestOrder.amount : merchantMetrics.aiAttributedRevenue,
-      aiBuyerOrders: orderService.hasOrders() ? orders.filter((o) => o.isAiBuyerOrder).length : merchantMetrics.aiBuyerOrders,
-      totalRevenue: merchantMetrics.totalRevenue + (latestOrder?.amount ?? 0),
-      orders: merchantMetrics.orders + orders.length,
+      aiAttributedRevenue: latest?.isAiBuyerOrder ? latest.amount : merchantMetrics.aiAttributedRevenue,
+      aiBuyerOrders: inMemoryOrders.length > 0 ? inMemoryOrders.filter((o) => o.isAiBuyerOrder).length : merchantMetrics.aiBuyerOrders,
+      totalRevenue: merchantMetrics.totalRevenue + (latest?.amount ?? 0),
+      orders: merchantMetrics.orders + inMemoryOrders.length,
     };
   },
 
   getRecentAiBuyerOrders(): Order[] {
-    return orders.filter((o) => o.isAiBuyerOrder);
+    return inMemoryOrders.filter((o) => o.isAiBuyerOrder);
   },
 };
 
-export const recommendationService = {
+const recommendationService = {
   getAll(): AIRecommendation[] {
     return recommendations;
   },
@@ -119,19 +65,19 @@ export const recommendationService = {
   },
 };
 
-export const analyticsService = {
-  getData() {
+const analyticsService = {
+  getData(): AnalyticsData {
     return analyticsData;
   },
 };
 
-export const auditService = {
-  getEvents() {
+const auditService = {
+  getEvents(): AuditEvent[] {
     return auditEvents;
   },
 };
 
-export const aiMerchantService = {
+const aiMerchantService = {
   async analyze(): Promise<{ insights: typeof aiInsights; status: string }> {
     await delay(1500);
     return {
@@ -141,13 +87,13 @@ export const aiMerchantService = {
   },
 };
 
-export const aiBuyerActivityService = {
-  getActivities() {
+const aiBuyerActivityService = {
+  getActivities(): AIBuyerActivity[] {
     return aiBuyerActivities;
   },
 };
 
-export const authService = {
+const authService = {
   login(_email: string, _password: string): Promise<{ success: boolean }> {
     return Promise.resolve({ success: true });
   },

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Logo } from './Logo';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/useApp';
 
 const navLinks = [
   { to: '/merchant', label: 'Overview', icon: LayoutDashboard },

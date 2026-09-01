@@ -10,7 +10,7 @@ export type ProductCategory =
   | 'jackets'
   | 'shoes'
   | 'handbags'
-  | 'earrings'
+  | 'earrings' 
   | 'necklaces'
   | 'wedding-accessories'
   | 'party-wear';

@@ -1,16 +1,25 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { getProductById } from '../data/mockData';
+import { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { CartItem, ChatMessage, BuyerRequirements, Order, UserPreferences } from '../types';
+import { cartService, type BackendCartItem } from '../services/cartService';
+import { orderService } from '../services/orderService';
+import { preferencesService } from '../services/preferencesService';
+import { getUserFriendlyMessage } from '../services/apiClient';
 
-interface AppContextType {
+export interface AppContextType {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   cart: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: string) => void;
-  updateCartQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
+  backendCartItems: BackendCartItem[];
+  cartLoaded: boolean;
+  cartLoading: boolean;
+  cartError: string | null;
+  addToCart: (item: CartItem) => Promise<boolean>;
+  removeFromCart: (productId: string) => Promise<boolean>;
+  updateCartQuantity: (productId: string, quantity: number) => Promise<boolean>;
+  clearCart: () => Promise<boolean>;
+  refreshCart: () => Promise<void>;
   cartCount: number;
+  cartSubtotal: number;
   cartTotal: number;
   compareList: string[];
   addToCompare: (productId: string) => void;
@@ -28,10 +37,18 @@ interface AppContextType {
   lastOrder: Order | null;
   setLastOrder: (order: Order | null) => void;
   orders: Order[];
+  ordersLoaded: boolean;
+  ordersLoading: boolean;
+  ordersError: string | null;
+  loadOrders: () => Promise<void>;
   setOrders: (orders: Order[]) => void;
   addOrder: (order: Order) => void;
   preferences: UserPreferences;
-  updatePreferences: (prefs: Partial<UserPreferences>) => void;
+  preferencesLoaded: boolean;
+  preferencesLoading: boolean;
+  preferencesError: string | null;
+  loadPreferences: () => Promise<void>;
+  updatePreferences: (prefs: Partial<UserPreferences>) => Promise<boolean>;
   toast: { message: string; type: 'success' | 'error' | 'info' } | null;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   hideToast: () => void;
@@ -49,7 +66,7 @@ const defaultPreferences: UserPreferences = {
   notifications: true,
 };
 
-const AppContext = createContext<AppContextType | null>(null);
+export const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -57,10 +74,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return (saved as 'light' | 'dark') || 'light';
   });
 
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('agentcart-cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [backendCartItems, setBackendCartItems] = useState<BackendCartItem[]>([]);
+  const [cartLoaded, setCartLoaded] = useState(false);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartError, setCartError] = useState<string | null>(null);
 
   const [compareList, setCompareList] = useState<string[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -68,51 +85,185 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [recommendedProductIds, setRecommendedProductIds] = useState<string[]>([]);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+
   const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
+  const [preferencesError, setPreferencesError] = useState<string | null>(null);
+
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [cartSubtotal, setCartSubtotal] = useState(0);
+  const [cartTotalVal, setCartTotalVal] = useState(0);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('agentcart-theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem('agentcart-cart', JSON.stringify(cart));
-  }, [cart]);
-
   const toggleTheme = useCallback(() => {
     setTheme((t) => (t === 'light' ? 'dark' : 'light'));
   }, []);
 
-  const addToCart = useCallback((item: CartItem) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.productId === item.productId && i.size === item.size && i.color === item.color);
-      if (existing) {
-        return prev.map((i) =>
-          i.productId === item.productId && i.size === item.size && i.color === item.color
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
-        );
-      }
-      return [...prev, item];
-    });
-  }, []);
+  const cart: CartItem[] = backendCartItems.map((i) => ({
+    productId: i.productId,
+    quantity: i.quantity,
+    size: i.size,
+    color: i.color,
+  }));
 
-  const removeFromCart = useCallback((productId: string) => {
-    setCart((prev) => prev.filter((i) => i.productId !== productId));
-  }, []);
+  const cartCount = backendCartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  const updateCartQuantity = useCallback((productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      setCart((prev) => prev.filter((i) => i.productId !== productId));
-      return;
+  const refreshCart = useCallback(async () => {
+    setCartLoading(true);
+    setCartError(null);
+    try {
+      const c = await cartService.getCart();
+      setBackendCartItems(c.items || []);
+      setCartSubtotal(Number(c.subtotal ?? 0));
+      setCartTotalVal(Number(c.total ?? 0));
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setCartError(msg);
+      console.error('[AppContext] refreshCart failed:', err);
+    } finally {
+      setCartLoading(false);
+      setCartLoaded(true);
     }
-    setCart((prev) => prev.map((i) => (i.productId === productId ? { ...i, quantity } : i)));
   }, []);
 
-  const clearCart = useCallback(() => setCart([]), []);
+  useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
+
+  const loadOrders = useCallback(async () => {
+    setOrdersLoading(true);
+    setOrdersError(null);
+    try {
+      const list = await orderService.getAll();
+      setOrders(list);
+      if (list.length > 0 && !lastOrder) {
+        setLastOrder(list[0]);
+      }
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setOrdersError(msg);
+      console.error('[AppContext] loadOrders failed:', err);
+    } finally {
+      setOrdersLoading(false);
+      setOrdersLoaded(true);
+    }
+  }, [lastOrder]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const loadPreferences = useCallback(async () => {
+    setPreferencesLoading(true);
+    setPreferencesError(null);
+    try {
+      const p = await preferencesService.getPreferences();
+      setPreferences(p);
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setPreferencesError(msg);
+      console.error('[AppContext] loadPreferences failed:', err);
+    } finally {
+      setPreferencesLoading(false);
+      setPreferencesLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
+
+  const addToCart = useCallback(async (item: CartItem): Promise<boolean> => {
+    try {
+      const c = await cartService.addItem({
+        productId: item.productId,
+        quantity: item.quantity,
+        size: item.size,
+        color: item.color,
+      });
+      setBackendCartItems(c.items || []);
+      setCartSubtotal(Number(c.subtotal ?? 0));
+      setCartTotalVal(Number(c.total ?? 0));
+      setCartError(null);
+      return true;
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setCartError(msg);
+      showToast(msg, 'error');
+      console.error('[AppContext] addToCart failed:', err);
+      return false;
+    }
+  }, []);
+
+  const removeFromCart = useCallback(async (productId: string): Promise<boolean> => {
+    try {
+      const item = backendCartItems.find((i) => i.productId === productId);
+      if (!item?.id) return true;
+      const c = await cartService.removeItem(item.id);
+      setBackendCartItems(c.items || []);
+      setCartSubtotal(Number(c.subtotal ?? 0));
+      setCartTotalVal(Number(c.total ?? 0));
+      setCartError(null);
+      return true;
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setCartError(msg);
+      showToast(msg, 'error');
+      console.error('[AppContext] removeFromCart failed:', err);
+      return false;
+    }
+  }, [backendCartItems]);
+
+  const updateCartQuantity = useCallback(async (productId: string, quantity: number): Promise<boolean> => {
+    try {
+      if (quantity <= 0) {
+        return removeFromCart(productId);
+      }
+      const item = backendCartItems.find((i) => i.productId === productId);
+      if (!item?.id) return false;
+      const c = await cartService.updateItem(item.id, { quantity });
+      setBackendCartItems(c.items || []);
+      setCartSubtotal(Number(c.subtotal ?? 0));
+      setCartTotalVal(Number(c.total ?? 0));
+      setCartError(null);
+      return true;
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setCartError(msg);
+      showToast(msg, 'error');
+      console.error('[AppContext] updateCartQuantity failed:', err);
+      return false;
+    }
+  }, [backendCartItems, removeFromCart]);
+
+  const clearCart = useCallback(async (): Promise<boolean> => {
+    try {
+      const c = await cartService.clearCart();
+      setBackendCartItems(c.items || []);
+      setCartSubtotal(Number(c.subtotal ?? 0));
+      setCartTotalVal(Number(c.total ?? 0));
+      setCartError(null);
+      return true;
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setCartError(msg);
+      showToast(msg, 'error');
+      console.error('[AppContext] clearCart failed:', err);
+      return false;
+    }
+  }, []);
 
   const addToCompare = useCallback((productId: string) => {
     setCompareList((prev) => (prev.includes(productId) ? prev : prev.length < 4 ? [...prev, productId] : prev));
@@ -133,8 +284,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLastOrder(order);
   }, []);
 
-  const updatePreferences = useCallback((prefs: Partial<UserPreferences>) => {
-    setPreferences((prev) => ({ ...prev, ...prefs }));
+  const updatePreferencesLocal = useCallback(async (prefs: Partial<UserPreferences>): Promise<boolean> => {
+    try {
+      const updated = await preferencesService.updatePreferences(prefs);
+      setPreferences(updated);
+      setPreferencesError(null);
+      return true;
+    } catch (err) {
+      const msg = getUserFriendlyMessage(err);
+      setPreferencesError(msg);
+      showToast(msg, 'error');
+      console.error('[AppContext] updatePreferences failed:', err);
+      setPreferences((prev) => ({ ...prev, ...prefs }));
+      return false;
+    }
   }, []);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -144,25 +307,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const hideToast = useCallback(() => setToast(null), []);
 
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const cartTotal = cart.reduce((sum, item) => {
-    const product = getProductById(item.productId);
-    return sum + (product?.price ?? 0) * item.quantity;
-  }, 0);
-
   return (
     <AppContext.Provider
       value={{
         theme,
         toggleTheme,
         cart,
+        backendCartItems,
+        cartLoaded,
+        cartLoading,
+        cartError,
         addToCart,
         removeFromCart,
         updateCartQuantity,
         clearCart,
+        refreshCart,
         cartCount,
-        cartTotal,
+        cartSubtotal,
+        cartTotal: cartTotalVal,
         compareList,
         addToCompare,
         removeFromCompare,
@@ -179,10 +341,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         lastOrder,
         setLastOrder,
         orders,
+        ordersLoaded,
+        ordersLoading,
+        ordersError,
+        loadOrders,
         setOrders,
         addOrder,
         preferences,
-        updatePreferences,
+        preferencesLoaded,
+        preferencesLoading,
+        preferencesError,
+        loadPreferences,
+        updatePreferences: updatePreferencesLocal,
         toast,
         showToast,
         hideToast,
@@ -193,10 +363,4 @@ export function AppProvider({ children }: { children: ReactNode }) {
       {children}
     </AppContext.Provider>
   );
-}
-
-export function useApp() {
-  const context = useContext(AppContext);
-  if (!context) throw new Error('useApp must be used within AppProvider');
-  return context;
 }
