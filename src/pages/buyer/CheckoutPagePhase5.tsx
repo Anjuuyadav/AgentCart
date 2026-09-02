@@ -135,7 +135,7 @@ export function CheckoutPage() {
         customerName: form.name,
         description: `Order ${newOrder.orderNumber} - AgentCart`,
         onSuccess: async (paymentId: string, signature: string) => {
-          await handlePaymentSuccess(newOrder, paymentId, signature, razorpayOrder.razorpayOrderId);
+          await handlePaymentSuccess(newOrder.id, paymentId, signature, razorpayOrder.razorpayOrderId);
         },
         onError: (error: string) => {
           handlePaymentFailure(newOrder.id, error);
@@ -154,7 +154,7 @@ export function CheckoutPage() {
 
   // Handle successful payment
   const handlePaymentSuccess = async (
-    completedOrder: FrontendOrder,
+    orderId: string,
     paymentId: string,
     signature: string,
     razorpayOrderId: string,
@@ -163,18 +163,17 @@ export function CheckoutPage() {
       setProcessing(true);
 
       // Capture payment on backend
-      const paymentResult = await paymentService.capturePayment(completedOrder.id, {
+      const paymentResult = await paymentService.capturePayment(orderId, {
         razorpay_payment_id: paymentId,
         razorpay_order_id: razorpayOrderId,
         razorpay_signature: signature,
-        amount: completedOrder.amount * 100,
+        amount: cartTotal,
       });
 
       if (paymentResult.status === 'success') {
         // Log successful payment action
         await aiBuyerService.logAction({
           action_type: 'purchase',
-          revenue: cartTotal,
           details: {
             paymentStatus: 'success',
             transactionId: paymentId,
@@ -184,15 +183,15 @@ export function CheckoutPage() {
           // Silent fail
         });
 
-        setConfirmationMessage(`Payment successful! Order ${completedOrder.orderNumber} confirmed.`);
-        addOrder(completedOrder);
+        setConfirmationMessage(`Payment successful! Order ${order?.orderNumber} confirmed.`);
+        addOrder(order!);
         await clearCart();
         await refreshCart();
         await loadOrders();
 
         // Redirect to order confirmation
         setTimeout(() => {
-          navigate(`/orders/${completedOrder.orderNumber}?confirmed=true`);
+          navigate(`/orders/${order?.orderNumber}?confirmed=true`);
         }, 2000);
       } else {
         throw new Error('Payment capture failed');

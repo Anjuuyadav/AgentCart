@@ -122,7 +122,7 @@ export const orderRepository = {
           customer_name, customer_email, shipping_address, is_ai_buyer_order,
           ai_match_score, timeline
         ) VALUES (
-          $1, $2, $3, $4, 'confirmed', 'success',
+          $1, $2, $3, $4, 'confirmed', 'pending',
           $5, $6, $7, $8, $9, $10::jsonb
         ) RETURNING *
       `;
@@ -161,13 +161,12 @@ export const orderRepository = {
       }
 
       const paymentSql = `
-        INSERT INTO payments (order_id, amount, method, status, transaction_id)
-        VALUES ($1, $2, 'razorpay', 'success', $3)
+        INSERT INTO payments (order_id, amount, method, status)
+        VALUES ($1, $2, 'razorpay', 'pending')
       `;
       await client.query(paymentSql, [
         orderRow.id,
         params.totalAmount,
-        `rzp_test_${Date.now()}`,
       ]);
 
       await client.query('COMMIT');
@@ -180,5 +179,37 @@ export const orderRepository = {
     } finally {
       client.release();
     }
+  },
+
+  async updatePaymentStatus(
+    orderId: string,
+    paymentStatus: 'pending' | 'success' | 'failed' | 'refunded',
+  ): Promise<Order | null> {
+    const sql = `
+      UPDATE orders
+      SET payment_status = $2, updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `;
+    const res = await query(sql, [orderId, paymentStatus]);
+    if (res.rows.length === 0) return null;
+    const items = await this.findItemsByOrderId(orderId);
+    return rowToOrder(res.rows[0], items);
+  },
+
+  async updateOrderStatus(
+    orderId: string,
+    status: 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled',
+  ): Promise<Order | null> {
+    const sql = `
+      UPDATE orders
+      SET status = $2, updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `;
+    const res = await query(sql, [orderId, status]);
+    if (res.rows.length === 0) return null;
+    const items = await this.findItemsByOrderId(orderId);
+    return rowToOrder(res.rows[0], items);
   },
 };

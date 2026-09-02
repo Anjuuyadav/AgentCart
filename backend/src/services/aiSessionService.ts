@@ -27,7 +27,9 @@ export const aiSessionService = {
       throw new ValidationError('Invalid AI session payload', errors);
     }
 
-    const resolvedUserId = params.userId || await userRepository.ensureDemoUser(
+    // Always ensure demo user exists (will return existing ID if already present)
+    // This handles the case where middleware provides a default userId that hasn't been created yet
+    const resolvedUserId = await userRepository.ensureDemoUser(
       'demo.customer@agentcart.io',
       'Demo Customer',
     );

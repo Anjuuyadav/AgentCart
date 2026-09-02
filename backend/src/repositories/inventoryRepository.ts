@@ -116,4 +116,47 @@ export const inventoryRepository = {
     if (res.rows.length === 0) return null;
     return rowToInventory(res.rows[0]);
   },
+
+  /**
+   * Deduct inventory when an order is placed
+   * Uses row-level locking for safety
+   */
+  async deductStock(variantId: string, quantity: number): Promise<boolean> {
+    const sql = `
+      UPDATE inventory
+      SET stock = stock - $2
+      WHERE variant_id = $1 AND stock >= $2
+      RETURNING *
+    `;
+    const res = await query(sql, [variantId, quantity]);
+    return res.rows.length > 0;
+  },
+
+  /**
+   * Reserve inventory (temporary hold)
+   */
+  async reserveStock(variantId: string, quantity: number): Promise<boolean> {
+    const sql = `
+      UPDATE inventory
+      SET reserved = reserved + $2
+      WHERE variant_id = $1 AND (stock - reserved) >= $2
+      RETURNING *
+    `;
+    const res = await query(sql, [variantId, quantity]);
+    return res.rows.length > 0;
+  },
+
+  /**
+   * Release reserved inventory
+   */
+  async releaseReserved(variantId: string, quantity: number): Promise<boolean> {
+    const sql = `
+      UPDATE inventory
+      SET reserved = MAX(0, reserved - $2)
+      WHERE variant_id = $1
+      RETURNING *
+    `;
+    const res = await query(sql, [variantId, quantity]);
+    return res.rows.length > 0;
+  },
 };

@@ -17,6 +17,7 @@ import { orderRouter } from './routes/orders.js';
 import { buyerRouter } from './routes/buyer.js';
 import { aiRouter } from './routes/ai.js';
 import { purchasePolicyRouter } from './routes/purchasePolicy.js';
+import { paymentRouter } from './routes/payment.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,13 +45,14 @@ function createApp(): Express {
   app.get('/', (_req: Request, res: Response) => {
     res.json({
       name: 'AgentCart Backend',
-      phase: 2,
+      phase: 5,
       docs: 'Visit /api/health for status, /api/health/db for database connectivity.',
       endpoints: {
         products: 'GET /api/products, GET /api/products/:id, GET /api/products/:id/variants',
         inventory: 'GET /api/inventory, GET /api/inventory/:productId',
         cart: 'GET /api/cart, POST /api/cart/items, PATCH /api/cart/items/:id, DELETE /api/cart/items/:id, DELETE /api/cart',
         orders: 'GET /api/orders, GET /api/orders/:id, POST /api/orders',
+        payments: 'POST /api/payments/create-order, POST /api/payments/:orderId/capture, POST /api/payments/:orderId/failure, GET /api/payments/:orderId',
         buyer: 'GET /api/buyer/preferences, PATCH /api/buyer/preferences',
         ai: 'POST /api/ai/sessions, GET /api/ai/sessions/:id, POST /api/ai/sessions/:id/actions',
         purchasePolicy: 'GET /api/purchase-policy, POST /api/purchase-policy/evaluate',
@@ -68,6 +70,7 @@ function createApp(): Express {
   app.use(`${API_PREFIX}/inventory`, inventoryRouter);
   app.use(`${API_PREFIX}/cart`, cartRouter);
   app.use(`${API_PREFIX}/orders`, orderRouter);
+  app.use(`${API_PREFIX}/payments`, paymentRouter);
   app.use(`${API_PREFIX}/buyer`, buyerRouter);
   app.use(`${API_PREFIX}/ai`, aiRouter);
   app.use(`${API_PREFIX}/purchase-policy`, purchasePolicyRouter);
@@ -91,7 +94,7 @@ function createApp(): Express {
 
 export { createApp };
 
-if (process.argv[1]?.endsWith('index.ts') || import.meta.url.endsWith('index.ts')) {
+if (process.argv[1]?.endsWith('index.ts') || process.argv[1]?.endsWith('index.js') || import.meta.url.endsWith('index.ts')) {
   const app = createApp();
 
   const server = app.listen(PORT, async () => {

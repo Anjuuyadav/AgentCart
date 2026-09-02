@@ -7,9 +7,11 @@ import { Card } from '../../components/ui/Card';
 import { AIBadge, AIStatus } from '../../components/ai/AIComponents';
 import { Badge } from '../../components/ui/Badge';
 import { useApp } from '../../contexts/useApp';
-import { aiBuyerService, productService } from '../../services/productService';
+import { productService } from '../../services/productService';
+import { aiBuyerService } from '../../services/aiBuyerService';
 import { DEMO_QUERY, formatPrice } from '../../services';
 import type { ChatMessage, BuyerRequirements, Product } from '../../types';
+import { getUserFriendlyMessage } from '../../services/apiClient';
 
 function RequirementsDisplay({ requirements }: { requirements: BuyerRequirements }) {
   return (
@@ -195,33 +197,113 @@ export function AIBuyerPage() {
     setRecommendations(new Map());
 
     try {
-      for (const step of ['Understanding your requirements...', 'Searching AgentCart...']) {
-        setLocalMessages((prev) => [...prev, {
-          id: `status-${Date.now()}-${step}`,
+      // Show status messages
+      const statusMessages = ['Understanding your requirements...', 'Searching AgentCart...', 'Ranking matches...'];
+      for (const step of statusMessages) {
+        const statusMsg: ChatMessage = {
+          id: `status-${Date.now()}-${Math.random()}`,
           role: 'assistant',
           content: step,
           timestamp: new Date(),
           type: 'status',
-        }]);
-        await new Promise((r) => setTimeout(r, 600));
-        setLocalMessages((prev) => prev.filter((m) => m.type !== 'status' || m.content !== step));
-      }
-
-      const result = await aiBuyerService.processQuery(userMessage.content);
-
-      for (const msg of result.messages) {
-        if (msg.type === 'status') continue;
-        setLocalMessages((prev) => [...prev, msg]);
-        if (msg.type === 'requirements' && msg.requirements) {
-          setLocalRequirements(msg.requirements);
-          setRequirements(msg.requirements);
-        }
+        };
+        setLocalMessages((prev) => [...prev, statusMsg]);
         await new Promise((r) => setTimeout(r, 400));
       }
 
-      setLocalProductIds(result.productIds);
-      setRecommendedProductIds(result.productIds);
+      // Remove status messages
+      setLocalMessages((prev) => prev.filter((m) => m.type !== 'status'));
+
+      // Call the real AI Buyer backend service
+      const response = await aiBuyerService.chat({
+        sessionId: undefined, // Start new session
+        message: userMessage.content,
+      });
+
+      if (response.status === 'error') {
+        throw new Error(response.error || 'AI Buyer encountered an error');
+      }
+
+      // Update local state with extracted requirements
+      if (response.requirements) {
+        setLocalRequirements(response.requirements as BuyerRequirements);
+        setRequirements(response.requirements as BuyerRequirements);
+
+        // Add requirements message
+        setLocalMessages((prev) => [...prev, {
+          id: `req-${Date.now()}`,
+          role: 'assistant',
+          content: 'Extracted Requirements',
+          timestamp: new Date(),
+          type: 'requirements',
+          requirements: response.requirements as BuyerRequirements,
+        }]);
+      }
+
+      // Add recommendations message
+      setLocalMessages((prev) => [...prev, {
+        id: `rec-${Date.now()}`,
+        role: 'assistant',
+        content: response.message,
+        timestamp: new Date(),
+        type: 'recommendations',
+      }]);
+
+      // Update product IDs and recommendations
+      const productIds = response.recommendations.map((r) => r.productId);
+      setLocalProductIds(productIds);
+      setRecommendedProductIds(productIds);
+
+      // Build product state from recommendations
+      const recommendationsMap = new Map<string, RecommendedProductState>();
+      for (const rec of response.recommendations) {
+        try {
+          const product = await productService.getById(rec.productId);
+          if (product) {
+            recommendationsMap.set(rec.productId, {
+              loading: false,
+              error: null,
+              product,
+              aiMatchScore: rec.matchScore,
+              aiReasons: rec.reasons,
+            });
+
+            // Record view in AI system
+            try {
+              await aiBuyerService.recordView({
+                sessionId: response.sessionId,
+                productId: rec.productId,
+                productName: rec.name,
+                matchScore: rec.matchScore,
+              });
+            } catch (err) {
+              console.error('[AIBuyerPage] Failed to record view:', err);
+            }
+          }
+        } catch (err) {
+          recommendationsMap.set(rec.productId, {
+            loading: false,
+            error: getUserFriendlyMessage(err),
+            product: null,
+            aiMatchScore: rec.matchScore,
+          });
+        }
+      }
+
+      setRecommendations(recommendationsMap);
       setShowRecommendations(true);
+    } catch (err) {
+      const message = getUserFriendlyMessage(err);
+      console.error('[AIBuyerPage] Error:', err);
+
+      // Add error message
+      setLocalMessages((prev) => [...prev, {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: `I encountered an error: ${message}. Please try again.`,
+        timestamp: new Date(),
+        type: 'text',
+      }]);
     } finally {
       setProcessing(false);
     }

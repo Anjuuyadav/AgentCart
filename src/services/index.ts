@@ -1,4 +1,5 @@
-export { productService, inventoryService, aiBuyerService } from './productService';
+export { productService, inventoryService } from './productService';
+export { aiBuyerService } from './aiBuyerService';
 export { cartService } from './cartService';
 export { orderService } from './orderService';
 export { preferencesService } from './preferencesService';

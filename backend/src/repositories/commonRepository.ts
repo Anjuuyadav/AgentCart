@@ -3,7 +3,7 @@ import type { AISession, AIAction, AuditLog, PurchasePolicy, PurchasePolicyCheck
 
 function rowToAISession(row: Record<string, unknown>): AISession {
   return {
-    id: row.id as string | undefined,
+    id: row.id as string,
     userId: row.user_id as string | undefined,
     sessionType: row.session_type as AISession['sessionType'],
     initialQuery: (row.initial_query as string) || undefined,
@@ -216,5 +216,99 @@ export const policyRepository = {
     const res = await query(sql, [userId]);
     if (res.rows.length === 0) return null;
     return rowToPurchasePolicy(res.rows[0]);
+  },
+};
+
+export interface Payment {
+  id?: string;
+  orderId: string;
+  amount: number;
+  method: string;
+  status: 'pending' | 'success' | 'failed' | 'refunded';
+  transactionId?: string;
+  rawResponse?: Record<string, unknown>;
+  createdAt?: Date;
+}
+
+function rowToPayment(row: Record<string, unknown>): Payment {
+  return {
+    id: row.id as string | undefined,
+    orderId: row.order_id as string,
+    amount: parseFloat(String(row.amount)),
+    method: row.method as string,
+    status: row.status as Payment['status'],
+    transactionId: (row.transaction_id as string) || undefined,
+    rawResponse: (row.raw_response as Record<string, unknown>) || undefined,
+    createdAt: row.created_at ? new Date(row.created_at as string) : undefined,
+  };
+}
+
+export const paymentRepository = {
+  async create(params: {
+    orderId: string;
+    amount: number;
+    method: string;
+    status: Payment['status'];
+    transactionId?: string;
+    rawResponse?: Record<string, unknown>;
+  }): Promise<Payment> {
+    const sql = `
+      INSERT INTO payments (order_id, amount, method, status, transaction_id, raw_response)
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+      RETURNING *
+    `;
+    const res = await query(sql, [
+      params.orderId,
+      params.amount,
+      params.method,
+      params.status,
+      params.transactionId || null,
+      params.rawResponse ? JSON.stringify(params.rawResponse) : null,
+    ]);
+    return rowToPayment(res.rows[0]);
+  },
+
+  async findByOrderId(orderId: string): Promise<Payment | null> {
+    const sql = `
+      SELECT * FROM payments
+      WHERE order_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    const res = await query(sql, [orderId]);
+    if (res.rows.length === 0) return null;
+    return rowToPayment(res.rows[0]);
+  },
+
+  async updateStatus(
+    paymentId: string,
+    status: Payment['status'],
+    transactionId?: string,
+    rawResponse?: Record<string, unknown>,
+  ): Promise<Payment | null> {
+    const sql = `
+      UPDATE payments
+        SET status = $2,
+          transaction_id = COALESCE($3, transaction_id),
+          raw_response = COALESCE($4::jsonb, raw_response)
+      WHERE id = $1
+      RETURNING *
+    `;
+    const res = await query(sql, [
+      paymentId,
+      status,
+      transactionId || null,
+      rawResponse ? JSON.stringify(rawResponse) : null,
+    ]);
+    if (res.rows.length === 0) return null;
+    return rowToPayment(res.rows[0]);
+  },
+
+  async updateRazorpayOrderId(orderId: string, razorpayOrderId: string): Promise<void> {
+    await query(`
+      UPDATE payments
+      SET raw_response = COALESCE(raw_response, '{}'::jsonb) || $2::jsonb
+      WHERE order_id = $1
+    `, [orderId, JSON.stringify({ razorpayOrderId })]);
   },
 };

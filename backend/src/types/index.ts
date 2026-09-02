@@ -202,7 +202,7 @@ export interface BuyerRequirements {
 }
 
 export interface AISession {
-  id?: string;
+  id: string;
   userId?: string;
   sessionType: AISessionType;
   initialQuery?: string;
