@@ -109,7 +109,7 @@ export const paymentService = {
     customerEmail: string;
     customerName: string;
     description?: string;
-    onSuccess: (paymentId: string, signature: string) => void;
+    onSuccess: (paymentId: string, signature: string, razorpayOrderId: string) => void;
     onError: (error: string) => void;
   }): Promise<void> {
     const scriptLoaded = await this.loadRazorpayScript();
@@ -146,7 +146,11 @@ export const paymentService = {
         contact: '9000000000', // Dummy contact
       },
       handler: (response: any) => {
-        params.onSuccess(response.razorpay_payment_id, response.razorpay_signature);
+        params.onSuccess(
+          response.razorpay_payment_id,
+          response.razorpay_signature,
+          response.razorpay_order_id,
+        );
       },
       modal: {
         ondismiss: () => {

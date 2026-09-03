@@ -6,6 +6,7 @@ import { inventoryService } from './inventoryService.js';
 import { productRepository } from '../repositories/productRepository.js';
 import { NotFoundError, ConflictError, ValidationError } from '../middleware/errorHandler.js';
 import type { Order, OrderItem, OrderTimelineEvent, CreateOrderRequest } from '../types/index.js';
+import { n8nService } from './n8nService.js';
 
 function buildTimeline(): OrderTimelineEvent[] {
   const now = new Date();
@@ -146,6 +147,14 @@ export const orderService = {
         isAiBuyerOrder: input.isAiBuyerOrder,
       },
     });
+
+    await n8nService.sendEvent('order.created', {
+      orderId: order.id!,
+      orderNumber: order.orderNumber,
+      userId: resolvedUserId,
+      amount: order.totalAmount,
+      isAIBuyerOrder: order.isAiBuyerOrder,
+    }, `order.created:${order.id}`);
 
     return order;
   },

@@ -18,7 +18,6 @@ export const aiSessionService = {
     if (!VALID_SESSION_TYPES.includes(params.sessionType)) {
       errors.sessionType = [`Must be one of: ${VALID_SESSION_TYPES.join(', ')}`];
     }
-
     if (params.requirements && typeof params.requirements !== 'object') {
       errors.requirements = ['Must be an object'];
     }

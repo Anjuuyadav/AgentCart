@@ -39,6 +39,7 @@ interface MigrationResult {
 
 const MIGRATIONS = [
   { version: '001', name: 'init_schema', file: '001_init_schema.sql' },
+  { version: '002', name: 'event_deliveries', file: '002_event_deliveries.sql' },
 ];
 
 async function runMigrations(): Promise<MigrationResult[]> {

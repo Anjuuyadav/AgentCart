@@ -19,17 +19,8 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export { formatPrice, categoryLabels, CROSS_SELL_PRODUCT_ID, FEATURED_PRODUCT_ID, DEMO_QUERY };
 export const getProductById = mockGetProductById;
 
-export { merchantService, recommendationService, analyticsService, auditService, aiMerchantService, aiBuyerActivityService, authService, paymentService };
-
-const paymentService = {
-  async processPayment(_amount: number): Promise<{ success: boolean; transactionId: string }> {
-    await delay(1500);
-    return {
-      success: true,
-      transactionId: `rzp_test_${Date.now()}`,
-    };
-  },
-};
+export { merchantService, recommendationService, analyticsService, auditService, aiMerchantService, aiBuyerActivityService, authService };
+export { paymentService } from './paymentService';
 
 const merchantService = {
   getMetrics() {

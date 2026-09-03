@@ -1,6 +1,7 @@
 import { query, closePool, testConnection, getClient } from '../config/database.js';
 
 const TABLES_IN_ORDER = [
+  'event_deliveries',
   'audit_logs',
   'recommendations',
   'ai_insights',

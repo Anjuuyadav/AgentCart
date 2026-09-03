@@ -5,6 +5,7 @@ import { auditRepository } from '../repositories/commonRepository.js';
 import { userRepository } from '../repositories/userRepository.js';
 import { NotFoundError, ConflictError } from '../middleware/errorHandler.js';
 import type { Cart, CartItem } from '../types/index.js';
+import { n8nService } from './n8nService.js';
 
 function calculateTotals(cart: Cart): Cart {
   const subtotal = cart.items.reduce((sum, item) => {
@@ -29,6 +30,11 @@ export const cartService = {
     let cart = await cartRepository.findActiveByUserOrSession(resolvedUserId, sessionId);
     if (!cart) {
       cart = await cartRepository.create(resolvedUserId, sessionId);
+      await n8nService.sendEvent('cart.created', {
+        cartId: cart.id!,
+        userId: resolvedUserId,
+        itemCount: 0,
+      }, `cart.created:${cart.id}`);
     }
     return calculateTotals(cart);
   },
@@ -101,6 +107,10 @@ export const cartService = {
     }
 
     const refreshed = await cartRepository.findActiveByUserOrSession(resolvedUserId, sessionId);
+    const cartId = cart?.id;
+    if (!cartId) {
+      throw new NotFoundError('Cart');
+    }
     const withTotals = calculateTotals(refreshed!);
 
     await auditRepository.create({
@@ -114,9 +124,16 @@ export const cartService = {
         quantity: input.quantity,
         size: input.size,
         color: input.color,
-        cartId: cart.id,
+        cartId,
       },
     });
+    await n8nService.sendEvent('cart.updated', {
+      cartId,
+      userId: resolvedUserId,
+      productId: product.id,
+      itemCount: withTotals.items.length,
+      total: withTotals.total,
+    }, `cart.updated:${cartId}:${withTotals.items.length}:${withTotals.total}`);
 
     return withTotals;
   },
@@ -161,6 +178,10 @@ export const cartService = {
     await cartRepository.updateItemQuantity(cartItemId, quantity);
 
     const refreshed = await cartRepository.findActiveByUserOrSession(resolvedUserId, sessionId);
+    const cartId = cart?.id;
+    if (!cartId) {
+      throw new NotFoundError('Cart');
+    }
 
     await auditRepository.create({
       actor: 'customer',
@@ -173,6 +194,13 @@ export const cartService = {
         newQuantity: quantity,
       },
     });
+    await n8nService.sendEvent('cart.updated', {
+      cartId,
+      userId: resolvedUserId,
+      productId: item.productId,
+      itemCount: refreshed?.items.length || 0,
+      total: refreshed?.total || 0,
+    }, `cart.updated:${cartId}:${cartItemId}:${quantity}`);
 
     return calculateTotals(refreshed!);
   },

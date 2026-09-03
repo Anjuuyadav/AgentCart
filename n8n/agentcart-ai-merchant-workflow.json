@@ -1,0 +1,80 @@
+{
+  "name": "AgentCart Order to AI Merchant",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "agentcart/events", "responseMode": "responseNode" },
+      "id": "webhook",
+      "name": "1. AgentCart Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": { "jsCode": "const event = $json.body ?? $json;\nconst required = ['event', 'eventId', 'source', 'timestamp', 'data'];\nif (required.some((key) => event[key] === undefined || event[key] === null)) {\n  throw new Error('Malformed AgentCart event');\n}\nif (event.source !== 'agentcart-backend' || typeof event.data !== 'object') {\n  throw new Error('Invalid AgentCart event source or data');\n}\nif (['order.created', 'payment.success'].includes(event.event) && !event.data.orderId) {\n  throw new Error(`${event.event} requires data.orderId`);\n}\nreturn [{ json: event }];" },
+      "id": "validate",
+      "name": "2. Validate Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": { "conditions": { "options": { "caseSensitive": true }, "conditions": [{ "leftValue": "={{ $json.event }}", "rightValue": "order.created", "operator": { "type": "string", "operation": "equals" } }, { "leftValue": "={{ $json.data?.isAIBuyerOrder === true }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }], "combinator": "and" } },
+      "id": "ai-order-check",
+      "name": "3. Event Type Check / AI Buyer Order",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": { "assignments": { "assignments": [{ "id": "backend-base-url", "name": "backendBaseUrl", "value": "https://vatican-relating-let-into.trycloudflare.com", "type": "string" }] }, "includeOtherFields": true, "options": {} },
+      "id": "backend-config",
+      "name": "AgentCart Backend Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 200]
+    },
+    {
+      "parameters": { "method": "GET", "url": "={{ $json.backendBaseUrl }}/api/orders/{{ $json.data.orderId }}", "options": {} },
+      "id": "fetch-order",
+      "name": "4. Fetch Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $('AgentCart Backend Config').item.json.backendBaseUrl }}/api/merchant/ai/analyze", "sendBody": true, "specifyBody": "json", "jsonBody": "={ orderId: $('AgentCart Backend Config').item.json.data.orderId }", "options": {} },
+      "id": "analyze",
+      "name": "5. AI Merchant Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": { "jsCode": "const result = $json.data ?? $json;\nreturn [{ json: { event: 'ai_merchant.analysis_completed', source: 'agentcart-n8n', timestamp: new Date().toISOString(), data: { insightCount: result.insights?.length ?? 0, recommendationCount: result.recommendations?.length ?? 0 } } }];" },
+      "id": "notify",
+      "name": "6. Notify Merchant",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "{\n  \"success\": true,\n  \"message\": \"AgentCart event processed\"\n}", "options": {} },
+      "id": "respond",
+      "name": "7. Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "1. AgentCart Event Webhook": { "main": [[{ "node": "2. Validate Event", "type": "main", "index": 0 }]] },
+    "2. Validate Event": { "main": [[{ "node": "3. Event Type Check / AI Buyer Order", "type": "main", "index": 0 }]] },
+    "3. Event Type Check / AI Buyer Order": { "main": [[{ "node": "AgentCart Backend Config", "type": "main", "index": 0 }], [{ "node": "7. Respond", "type": "main", "index": 0 }]] },
+    "AgentCart Backend Config": { "main": [[{ "node": "4. Fetch Order", "type": "main", "index": 0 }]] },
+    "4. Fetch Order": { "main": [[{ "node": "5. AI Merchant Analysis", "type": "main", "index": 0 }]] },
+    "5. AI Merchant Analysis": { "main": [[{ "node": "6. Notify Merchant", "type": "main", "index": 0 }]] },
+    "6. Notify Merchant": { "main": [[{ "node": "7. Respond", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

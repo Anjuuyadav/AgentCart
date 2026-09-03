@@ -70,6 +70,16 @@ export const aiRepository = {
     };
   },
 
+  async getLatestBuyerSession(userId: string): Promise<AISession | null> {
+    const res = await query(`
+      SELECT * FROM ai_sessions
+      WHERE user_id = $1 AND session_type = 'buyer'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [userId]);
+    return res.rows.length > 0 ? rowToAISession(res.rows[0]) : null;
+  },
+
   async createAction(params: {
     aiSessionId: string;
     userId?: string;
@@ -219,96 +229,84 @@ export const policyRepository = {
   },
 };
 
-export interface Payment {
-  id?: string;
-  orderId: string;
-  amount: number;
-  method: string;
-  status: 'pending' | 'success' | 'failed' | 'refunded';
-  transactionId?: string;
-  rawResponse?: Record<string, unknown>;
-  createdAt?: Date;
-}
-
-function rowToPayment(row: Record<string, unknown>): Payment {
-  return {
-    id: row.id as string | undefined,
-    orderId: row.order_id as string,
-    amount: parseFloat(String(row.amount)),
-    method: row.method as string,
-    status: row.status as Payment['status'],
-    transactionId: (row.transaction_id as string) || undefined,
-    rawResponse: (row.raw_response as Record<string, unknown>) || undefined,
-    createdAt: row.created_at ? new Date(row.created_at as string) : undefined,
-  };
-}
-
 export const paymentRepository = {
+  async findByOrderId(orderId: string): Promise<{
+    id: string;
+    orderId: string;
+    amount: number;
+    method: string;
+    status: 'pending' | 'success' | 'failed' | 'refunded';
+    transactionId?: string;
+    rawResponse?: Record<string, unknown>;
+    createdAt?: Date;
+  } | null> {
+    const res = await query('SELECT * FROM payments WHERE order_id = $1 ORDER BY created_at DESC LIMIT 1', [orderId]);
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0];
+    return {
+      id: row.id as string,
+      orderId: row.order_id as string,
+      amount: Number(row.amount),
+      method: row.method as string,
+      status: row.status as 'pending' | 'success' | 'failed' | 'refunded',
+      transactionId: (row.transaction_id as string) || undefined,
+      rawResponse: (row.raw_response as Record<string, unknown>) || undefined,
+      createdAt: row.created_at ? new Date(row.created_at as string) : undefined,
+    };
+  },
+
   async create(params: {
     orderId: string;
     amount: number;
     method: string;
-    status: Payment['status'];
+    status: 'pending' | 'success' | 'failed' | 'refunded';
     transactionId?: string;
     rawResponse?: Record<string, unknown>;
-  }): Promise<Payment> {
-    const sql = `
+  }) {
+    const res = await query(`
       INSERT INTO payments (order_id, amount, method, status, transaction_id, raw_response)
       VALUES ($1, $2, $3, $4, $5, $6::jsonb)
       RETURNING *
-    `;
-    const res = await query(sql, [
-      params.orderId,
-      params.amount,
-      params.method,
-      params.status,
-      params.transactionId || null,
-      params.rawResponse ? JSON.stringify(params.rawResponse) : null,
-    ]);
-    return rowToPayment(res.rows[0]);
+    `, [params.orderId, params.amount, params.method, params.status, params.transactionId || null, params.rawResponse ? JSON.stringify(params.rawResponse) : null]);
+    const row = res.rows[0];
+    return {
+      id: row.id as string,
+      orderId: row.order_id as string,
+      amount: Number(row.amount),
+      method: row.method as string,
+      status: row.status as 'pending' | 'success' | 'failed' | 'refunded',
+      transactionId: (row.transaction_id as string) || undefined,
+      rawResponse: (row.raw_response as Record<string, unknown>) || undefined,
+      createdAt: row.created_at ? new Date(row.created_at as string) : undefined,
+    };
   },
 
-  async findByOrderId(orderId: string): Promise<Payment | null> {
-    const sql = `
-      SELECT * FROM payments
-      WHERE order_id = $1
-      ORDER BY created_at DESC
-      LIMIT 1
-    `;
-    const res = await query(sql, [orderId]);
-    if (res.rows.length === 0) return null;
-    return rowToPayment(res.rows[0]);
-  },
-
-  async updateStatus(
-    paymentId: string,
-    status: Payment['status'],
-    transactionId?: string,
-    rawResponse?: Record<string, unknown>,
-  ): Promise<Payment | null> {
-    const sql = `
+  async updateStatus(id: string, status: 'pending' | 'success' | 'failed' | 'refunded', transactionId?: string, rawResponse?: Record<string, unknown>) {
+    const res = await query(`
       UPDATE payments
-        SET status = $2,
-          transaction_id = COALESCE($3, transaction_id),
-          raw_response = COALESCE($4::jsonb, raw_response)
+      SET status = $2, transaction_id = COALESCE($3, transaction_id), raw_response = COALESCE($4::jsonb, raw_response)
       WHERE id = $1
       RETURNING *
-    `;
-    const res = await query(sql, [
-      paymentId,
-      status,
-      transactionId || null,
-      rawResponse ? JSON.stringify(rawResponse) : null,
-    ]);
+    `, [id, status, transactionId || null, rawResponse ? JSON.stringify(rawResponse) : null]);
     if (res.rows.length === 0) return null;
-    return rowToPayment(res.rows[0]);
+    const row = res.rows[0];
+    return {
+      id: row.id as string,
+      orderId: row.order_id as string,
+      amount: Number(row.amount),
+      method: row.method as string,
+      status: row.status as 'pending' | 'success' | 'failed' | 'refunded',
+      transactionId: (row.transaction_id as string) || undefined,
+      rawResponse: (row.raw_response as Record<string, unknown>) || undefined,
+      createdAt: row.created_at ? new Date(row.created_at as string) : undefined,
+    };
   },
 
   async updateRazorpayOrderId(orderId: string, razorpayOrderId: string): Promise<void> {
     await query(`
       UPDATE payments
-      SET raw_response = COALESCE(raw_response, '{}'::jsonb) || $2::jsonb
-      WHERE order_id = $1
-    `, [orderId, JSON.stringify({ razorpayOrderId })]);
+      SET raw_response = jsonb_set(COALESCE(raw_response, '{}'::jsonb), '{razorpayOrderId}', to_jsonb($2::text))
+      WHERE order_id = $1 AND status IN ('pending', 'failed')
+    `, [orderId, razorpayOrderId]);
   },
 };

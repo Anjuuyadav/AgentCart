@@ -1,9 +1,10 @@
 import crypto from 'crypto';
-import { paymentRepository, auditRepository } from '../repositories/commonRepository.js';
+import { paymentRepository, auditRepository, aiRepository } from '../repositories/commonRepository.js';
 import { orderRepository } from '../repositories/orderRepository.js';
 import { userRepository } from '../repositories/userRepository.js';
 import { AppError, NotFoundError, ConflictError, ValidationError } from '../middleware/errorHandler.js';
 import type { Order } from '../types/index.js';
+import { n8nService } from './n8nService.js';
 
 export interface RazorpayOrder {
   id: string;
@@ -54,6 +55,19 @@ export const paymentService = {
     orderId?: string;
   }): Promise<RazorpayOrder> {
     const { keyId, keySecret } = getRazorpayCredentials();
+    if (!params.orderId) {
+      throw new ValidationError('Missing orderId', { orderId: ['Required'] });
+    }
+    const order = await orderRepository.findById(params.orderId);
+    if (!order) {
+      throw new NotFoundError('Order', params.orderId);
+    }
+    const expectedAmount = Math.round(order.totalAmount * 100);
+    if (params.amount !== expectedAmount) {
+      throw new ValidationError('Payment amount does not match order total', {
+        amount: ['Amount mismatch'],
+      });
+    }
     const currency = 'INR';
     console.info('[Razorpay] order creation started', { amount: params.amount, currency });
 
@@ -109,9 +123,7 @@ export const paymentService = {
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
     });
-    if (params.orderId) {
-      await paymentRepository.updateRazorpayOrderId(params.orderId, razorpayOrder.id);
-    }
+    await paymentRepository.updateRazorpayOrderId(params.orderId, razorpayOrder.id);
     return razorpayOrder;
   },
 
@@ -158,10 +170,18 @@ export const paymentService = {
       amount: params.amount,
     });
     if (existingPayment && existingPayment.status === 'success') {
-      throw new ConflictError(
-        'Payment already processed for this order',
-        'DUPLICATE_PAYMENT',
-      );
+      if (existingPayment.transactionId === params.razorpayPaymentId
+        && existingPayment.rawResponse?.razorpayOrderId === params.razorpayOrderId) {
+        return {
+          id: existingPayment.id,
+          orderId: params.orderId,
+          amount: order.totalAmount,
+          status: 'success',
+          transactionId: existingPayment.transactionId,
+          message: 'Payment was already processed successfully',
+        };
+      }
+      throw new ConflictError('Payment already processed for this order', 'DUPLICATE_PAYMENT');
     }
 
     // Verify signature
@@ -262,6 +282,24 @@ export const paymentService = {
         razorpayOrderId: params.razorpayOrderId,
       },
     });
+    if (order.isAiBuyerOrder && order.userId) {
+      const session = await aiRepository.getLatestBuyerSession(order.userId);
+      if (session) {
+        await aiRepository.createAction({
+          aiSessionId: session.id,
+          userId: order.userId,
+          actionType: 'purchase',
+          productId: order.items[0]?.productId,
+          productName: order.items[0]?.productName,
+          revenue: order.totalAmount,
+          metadata: {
+            paymentStatus: 'success',
+            transactionId: params.razorpayPaymentId,
+            orderId: order.id,
+          },
+        });
+      }
+    }
     console.info('[Payment] capture completed', {
       orderId: params.orderId,
       paymentStatus: 'success',
@@ -269,6 +307,13 @@ export const paymentService = {
       razorpayOrderId: params.razorpayOrderId,
       amount: order.totalAmount,
     });
+    await n8nService.sendEvent('payment.success', {
+      orderId: params.orderId,
+      razorpayOrderId: params.razorpayOrderId,
+      razorpayPaymentId: params.razorpayPaymentId,
+      amount: order.totalAmount,
+      isAIBuyerOrder: order.isAiBuyerOrder,
+    }, `payment.success:${params.orderId}`);
 
     return {
       id: payment.id,
@@ -303,16 +348,22 @@ export const paymentService = {
     }
 
     // Create or update payment record
-    const payment = await paymentRepository.create({
-      orderId: params.orderId,
-      amount: order.totalAmount,
-      method: 'razorpay',
-      status: 'failed',
-      transactionId: params.razorpayPaymentId,
-      rawResponse: {
+    const payment = existingPayment
+      ? await paymentRepository.updateStatus(existingPayment.id!, 'failed', params.razorpayPaymentId, {
+        ...(existingPayment.rawResponse || {}),
         failure_reason: params.reason,
-      },
-    });
+      })
+      : await paymentRepository.create({
+        orderId: params.orderId,
+        amount: order.totalAmount,
+        method: 'razorpay',
+        status: 'failed',
+        transactionId: params.razorpayPaymentId,
+        rawResponse: { failure_reason: params.reason },
+      });
+    if (!payment) {
+      throw new AppError('Unable to update payment record', 500, 'PAYMENT_UPDATE_FAILED');
+    }
 
     // Update order payment status
     await orderRepository.updatePaymentStatus(params.orderId, 'failed');
@@ -329,6 +380,13 @@ export const paymentService = {
         transactionId: params.razorpayPaymentId,
       },
     });
+    await n8nService.sendEvent('payment.failed', {
+      orderId: params.orderId,
+      razorpayPaymentId: params.razorpayPaymentId,
+      amount: order.totalAmount,
+      reason: params.reason,
+      isAIBuyerOrder: order.isAiBuyerOrder,
+    }, `payment.failed:${params.orderId}`);
 
     return {
       id: payment.id,

@@ -45,17 +45,17 @@ function createApp(): Express {
   app.get('/', (_req: Request, res: Response) => {
     res.json({
       name: 'AgentCart Backend',
-      phase: 5,
+      phase: 2,
       docs: 'Visit /api/health for status, /api/health/db for database connectivity.',
       endpoints: {
         products: 'GET /api/products, GET /api/products/:id, GET /api/products/:id/variants',
         inventory: 'GET /api/inventory, GET /api/inventory/:productId',
         cart: 'GET /api/cart, POST /api/cart/items, PATCH /api/cart/items/:id, DELETE /api/cart/items/:id, DELETE /api/cart',
         orders: 'GET /api/orders, GET /api/orders/:id, POST /api/orders',
-        payments: 'POST /api/payments/create-order, POST /api/payments/:orderId/capture, POST /api/payments/:orderId/failure, GET /api/payments/:orderId',
         buyer: 'GET /api/buyer/preferences, PATCH /api/buyer/preferences',
         ai: 'POST /api/ai/sessions, GET /api/ai/sessions/:id, POST /api/ai/sessions/:id/actions',
         purchasePolicy: 'GET /api/purchase-policy, POST /api/purchase-policy/evaluate',
+        payments: 'POST /api/payments/create-order, POST /api/payments/:orderId/capture, POST /api/payments/:orderId/failure, GET /api/payments/:orderId',
         health: 'GET /api/health, GET /api/health/db',
       },
     });
@@ -70,10 +70,10 @@ function createApp(): Express {
   app.use(`${API_PREFIX}/inventory`, inventoryRouter);
   app.use(`${API_PREFIX}/cart`, cartRouter);
   app.use(`${API_PREFIX}/orders`, orderRouter);
-  app.use(`${API_PREFIX}/payments`, paymentRouter);
   app.use(`${API_PREFIX}/buyer`, buyerRouter);
   app.use(`${API_PREFIX}/ai`, aiRouter);
   app.use(`${API_PREFIX}/purchase-policy`, purchasePolicyRouter);
+  app.use(`${API_PREFIX}/payments`, paymentRouter);
 
   app.use('/api/v1', (_req, res) => {
     res.status(308).json({

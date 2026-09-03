@@ -112,6 +112,10 @@ export const paymentController = {
       const notes = (req.body.notes as Record<string, unknown>) || {};
       const orderId = typeof req.body.orderId === 'string' ? req.body.orderId : undefined;
 
+      if (!orderId) {
+        throw new ValidationError('Missing orderId', { orderId: ['Required'] });
+      }
+
       if (amount <= 0) {
         throw new ValidationError('Invalid amount', { amount: ['Must be greater than 0'] });
       }
