@@ -43,10 +43,7 @@ export const orderService = {
       'Demo Customer',
     );
 
-    let order = await orderRepository.findById(idOrNumber);
-    if (!order) {
-      order = await orderRepository.findByOrderNumber(idOrNumber);
-    }
+    const order = await orderRepository.getOrderByIdOrNumber(idOrNumber);
     if (!order) {
       throw new NotFoundError('Order', idOrNumber);
     }

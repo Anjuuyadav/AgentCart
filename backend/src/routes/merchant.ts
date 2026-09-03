@@ -10,6 +10,5 @@ router.patch('/recommendations/:id', merchantController.updateRecommendation);
 router.get('/ai-buyers/activity', merchantController.activity);
 router.get('/orders', merchantController.orders);
 router.get('/audit', merchantController.audit);
-router.post('/ai/analyze', merchantController.analyze);
 
 export { router as merchantRouter };

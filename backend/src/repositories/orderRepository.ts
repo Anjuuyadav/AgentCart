@@ -48,6 +48,10 @@ function rowToOrder(row: Record<string, unknown>, items: OrderItem[]): Order {
   };
 }
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export const orderRepository = {
   async findByUser(userId: string): Promise<Order[]> {
     const orderSql = `
@@ -71,6 +75,13 @@ export const orderRepository = {
     if (res.rows.length === 0) return null;
     const items = await this.findItemsByOrderId(id);
     return rowToOrder(res.rows[0], items);
+  },
+
+  async getOrderByIdOrNumber(value: string): Promise<Order | null> {
+    if (isUuid(value)) {
+      return this.findById(value);
+    }
+    return this.findByOrderNumber(value);
   },
 
   async findByOrderNumber(orderNumber: string): Promise<Order | null> {

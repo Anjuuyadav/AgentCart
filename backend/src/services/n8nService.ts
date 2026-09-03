@@ -6,6 +6,7 @@ export interface AgentCartEvent<T extends Record<string, unknown> = Record<strin
   event: string;
   timestamp: string;
   source: 'agentcart-backend';
+  backendBaseUrl?: string;
   data: T;
 }
 
@@ -17,11 +18,13 @@ export const n8nService = {
     data: T,
     eventId = `${event}:${crypto.randomUUID()}`,
   ): Promise<void> {
+    const backendBaseUrl = process.env.AGENTCART_BACKEND_URL?.trim();
     const payload: AgentCartEvent<T> = {
       eventId,
       event,
       timestamp: new Date().toISOString(),
       source: 'agentcart-backend',
+      ...(backendBaseUrl ? { backendBaseUrl } : {}),
       data,
     };
 

@@ -26,7 +26,7 @@
       "position": [680, 300]
     },
     {
-      "parameters": { "assignments": { "assignments": [{ "id": "backend-base-url", "name": "backendBaseUrl", "value": "https://vatican-relating-let-into.trycloudflare.com", "type": "string" }] }, "includeOtherFields": true, "options": {} },
+      "parameters": { "assignments": { "assignments": [{ "id": "backend-base-url", "name": "backendBaseUrl", "value": "={{ $json.backendBaseUrl }}", "type": "string" }] }, "includeOtherFields": true, "options": {} },
       "id": "backend-config",
       "name": "AgentCart Backend Config",
       "type": "n8n-nodes-base.set",
@@ -42,7 +42,7 @@
       "position": [1120, 200]
     },
     {
-      "parameters": { "method": "POST", "url": "={{ $('AgentCart Backend Config').item.json.backendBaseUrl }}/api/merchant/ai/analyze", "sendBody": true, "specifyBody": "json", "jsonBody": "={ orderId: $('AgentCart Backend Config').item.json.data.orderId }", "options": {} },
+      "parameters": { "method": "POST", "url": "={{ $('AgentCart Backend Config').item.json.backendBaseUrl }}/api/ai/analyze", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ orderId: $('AgentCart Backend Config').item.json.data.orderId }) }}", "options": {} },
       "id": "analyze",
       "name": "5. AI Merchant Analysis",
       "type": "n8n-nodes-base.httpRequest",
