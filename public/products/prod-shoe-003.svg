@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="title-prod-shoe-003">
+  <title id="title-prod-shoe-003">Black Suede Block Heel Pumps</title>
+  <rect width="800" height="1000" fill="#f8f3eb"/>
+  <rect x="60" y="60" width="680" height="780" rx="32" fill="#ffffff" opacity=".56"/>
+  <circle cx="690" cy="138" r="100" fill="#d4af37" opacity=".17"/>
+  <circle cx="122" cy="760" r="120" fill="#2d6f83" opacity=".10"/>
+  <path d="M182 574c80-2 135-64 178-177l96 70c45 35 105 67 174 94 51 20 65 74 32 107H183c-42 0-55-59-1-94z" fill="#7d1f35"/><path d="M310 538c87 16 177 23 269 18" fill="none" stroke="#2d6f83" stroke-width="21"/><path d="M214 641h407" stroke="#d4af37" stroke-width="12"/>
+  <path d="M190 852h420" stroke="#7d1f35" stroke-width="2" opacity=".32"/>
+  <text x="400" y="895" text-anchor="middle" fill="#26231f" font-family="Georgia, serif" font-size="25">Black Suede Block Heel Pumps</text>
+  <text x="400" y="930" text-anchor="middle" fill="#716b62" font-family="Arial, sans-serif" font-size="13" letter-spacing="3">AGENTCART ATELIER</text>
+</svg>

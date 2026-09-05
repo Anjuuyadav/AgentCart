@@ -1,7 +1,7 @@
 import { apiClient } from './apiClient';
 import type { Product, ProductVariant } from '../types';
 import type { ProductQueryParams } from './apiTypes';
-import { products as mockProducts, getProductById as mockGetProductById, categoryLabels } from '../data/mockData';
+import { products as mockProducts, getProductById as mockGetProductById } from '../data/mockData';
 
 function mapBackendProductToFrontend(p: any): Product {
   return {
@@ -60,7 +60,7 @@ export const productService = {
         }
         return { products: list, total };
       },
-      Promise.resolve({ products: mockProducts.map(mapBackendProductToFrontend), total: mockProducts.length }),
+      { products: mockProducts.map(mapBackendProductToFrontend), total: mockProducts.length },
     );
   },
 
@@ -77,7 +77,7 @@ export const productService = {
           throw err;
         }
       },
-      Promise.resolve(mockGetProductById(id)),
+      mockGetProductById(id),
     );
   },
 
@@ -92,7 +92,12 @@ export const productService = {
           sku: v.sku,
         }));
       },
-      Promise.resolve(mockGetProductById(productId)?.variants ?? []),
+      (mockGetProductById(productId)?.variants ?? []).map((v) => ({
+        size: v.size,
+        color: v.color,
+        stock: Number(v.stock ?? 0),
+        sku: v.sku,
+      })),
     );
   },
 
@@ -152,6 +157,3 @@ export const inventoryService = {
     return apiClient.get(`/inventory/${encodeURIComponent(productId)}`);
   },
 };
-
-
-import { DEMO_QUERY, FEATURED_PRODUCT_ID } from '../data/mockData';

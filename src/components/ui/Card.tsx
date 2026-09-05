@@ -17,7 +17,11 @@ const paddings = {
 export function Card({ children, className = '', hover = false, padding = 'md' }: CardProps) {
   return (
     <div
-      className={`rounded-xl border border-border bg-surface dark:border-border-dark dark:bg-surface-dark ${paddings[padding]} ${hover ? 'transition-shadow duration-200 hover:shadow-md' : ''} ${className}`}
+      className={`rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#131314]/90 backdrop-blur-md transition-all duration-300 ${paddings[padding]} ${
+        hover
+          ? 'hover:border-[rgba(212,175,55,0.35)] hover:shadow-[0_4px_30px_-8px_rgba(0,0,0,0.8),0_0_20px_-5px_rgba(212,175,55,0.12)]'
+          : ''
+      } ${className}`}
     >
       {children}
     </div>
@@ -25,13 +29,13 @@ export function Card({ children, className = '', hover = false, padding = 'md' }
 }
 
 export function CardHeader({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`mb-4 ${className}`}>{children}</div>;
+  return <div className={`mb-5 ${className}`}>{children}</div>;
 }
 
 export function CardTitle({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <h3 className={`text-lg font-semibold text-charcoal dark:text-white ${className}`}>{children}</h3>;
+  return <h3 className={`font-serif text-lg font-medium tracking-wide text-[#E5E2E3] ${className}`}>{children}</h3>;
 }
 
 export function CardDescription({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <p className={`text-sm text-muted dark:text-muted-light ${className}`}>{children}</p>;
+  return <p className={`text-xs tracking-wide text-[#9E9E9E] ${className}`}>{children}</p>;
 }

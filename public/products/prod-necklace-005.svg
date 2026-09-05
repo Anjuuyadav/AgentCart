@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="title-prod-necklace-005">
+  <title id="title-prod-necklace-005">Silver Layered Moonstone Necklace</title>
+  <rect width="800" height="1000" fill="#edf3ef"/>
+  <rect x="60" y="60" width="680" height="780" rx="32" fill="#ffffff" opacity=".56"/>
+  <circle cx="690" cy="138" r="100" fill="#f0a0a5" opacity=".17"/>
+  <circle cx="122" cy="760" r="120" fill="#72512b" opacity=".10"/>
+  <path d="M215 320c25 360 345 360 370 0" fill="none" stroke="#2d6f83" stroke-width="38"/><path d="M280 340c18 250 222 250 240 0" fill="none" stroke="#72512b" stroke-width="16"/><path d="M400 614l-53-78h106z" fill="#f0a0a5"/>
+  <path d="M190 852h420" stroke="#2d6f83" stroke-width="2" opacity=".32"/>
+  <text x="400" y="895" text-anchor="middle" fill="#26231f" font-family="Georgia, serif" font-size="25">Silver Layered Moonstone Necklace</text>
+  <text x="400" y="930" text-anchor="middle" fill="#716b62" font-family="Arial, sans-serif" font-size="13" letter-spacing="3">AGENTCART ATELIER</text>
+</svg>

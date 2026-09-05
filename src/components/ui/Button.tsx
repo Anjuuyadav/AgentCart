@@ -6,17 +6,22 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-charcoal text-white hover:bg-charcoal/90 dark:bg-white dark:text-charcoal dark:hover:bg-white/90',
-  secondary: 'bg-violet-ai text-white hover:bg-violet-ai-light',
-  outline: 'border border-border dark:border-border-dark hover:bg-charcoal/5 dark:hover:bg-white/5',
-  ghost: 'hover:bg-charcoal/5 dark:hover:bg-white/5',
-  ai: 'bg-violet-ai text-white hover:bg-violet-ai-light ai-glow',
+  primary:
+    'bg-[#D4AF37] text-[#0B0B0C] hover:bg-[#E5C358] active:bg-[#C29E2E] shadow-[0_0_20px_-5px_rgba(212,175,55,0.3)] hover:shadow-[0_0_25px_-3px_rgba(212,175,55,0.45)] border border-[#E9C349]/40',
+  secondary:
+    'bg-[#1C1B1C] text-[#E2E2E2] border border-[rgba(255,255,255,0.12)] hover:border-[rgba(212,175,55,0.5)] hover:text-white hover:bg-[#201F20]',
+  outline:
+    'bg-transparent text-[#E2E2E2] border border-[rgba(255,255,255,0.12)] hover:border-[rgba(212,175,55,0.45)] hover:text-[#D4AF37]',
+  ghost:
+    'bg-transparent text-[#9E9E9E] hover:text-[#E5E2E3] hover:bg-white/[0.04]',
+  ai:
+    'relative bg-[#1A1A1E] text-[#E5E2E3] border border-[rgba(212,175,55,0.4)] shadow-[0_0_25px_-6px_rgba(212,175,55,0.25)] hover:border-[#D4AF37] hover:shadow-[0_0_35px_-4px_rgba(212,175,55,0.35)]',
 };
 
 const sizes = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
+  sm: 'px-3 py-1.5 text-[11px] tracking-[0.14em]',
+  md: 'px-5 py-2.5 text-xs tracking-[0.16em]',
+  lg: 'px-7 py-3.5 text-xs tracking-[0.18em]',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -24,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       disabled={disabled}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-ai/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2.5 rounded-[4px] font-medium uppercase transition-all duration-300 cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/50 disabled:opacity-40 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {children}

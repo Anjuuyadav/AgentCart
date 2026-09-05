@@ -7,9 +7,8 @@ export { purchasePolicyService } from './purchasePolicyService';
 export { aiSessionService } from './aiSessionService';
 export { apiClient, getUserFriendlyMessage } from './apiClient';
 
-import { products as mockProducts, aiRecommendations, aiInsights, auditEvents, merchantMetrics, analyticsData, aiBuyerActivities, getProductById as mockGetProductById, formatPrice, categoryLabels, CROSS_SELL_PRODUCT_ID, FEATURED_PRODUCT_ID, DEMO_QUERY } from '../data/mockData';
-import type { Order, AIRecommendation, AIInsight, AuditEvent, AnalyticsData, MerchantMetrics, AIBuyerActivity, UserPreferences } from '../types';
-import { orderService as backendOrderService } from './orderService';
+import { aiRecommendations, aiInsights, auditEvents, merchantMetrics, analyticsData, aiBuyerActivities, getProductById as mockGetProductById, formatPrice, categoryLabels, CROSS_SELL_PRODUCT_ID, FEATURED_PRODUCT_ID, DEMO_QUERY } from '../data/mockData';
+import type { Order, AIRecommendation, AuditEvent, AnalyticsData, AIBuyerActivity } from '../types';
 
 let inMemoryOrders: Order[] = [];
 let recommendations = [...aiRecommendations];

@@ -3,7 +3,160 @@ import type { Product, Order, AIRecommendation, AIInsight, AuditEvent, Analytics
 export const FEATURED_PRODUCT_ID = 'prod-wedding-dress-001';
 export const CROSS_SELL_PRODUCT_ID = 'prod-earrings-001';
 
-export const products: Product[] = [
+type CatalogEntry = {
+  id: string;
+  name: string;
+  category: Product['category'];
+  price: number;
+  originalPrice?: number;
+  colors: string[];
+  material: string;
+  occasion: string;
+  gender: 'Women' | 'Men' | 'Unisex';
+  style: string;
+  sizes?: string[];
+  reviews: number;
+  rating: number;
+};
+
+function productImagePath(productId: string): string {
+  return `/products/${productId}.webp`;
+}
+
+function catalogProduct(entry: CatalogEntry): Product {
+  const clothingSizes = entry.sizes ?? ['S', 'M', 'L'];
+  const variants = entry.colors.flatMap((color, colorIndex) =>
+    clothingSizes.map((size, sizeIndex) => ({
+      size,
+      color,
+      stock: 5 + ((colorIndex * 7 + sizeIndex * 5 + entry.name.length) % 19),
+      sku: `${entry.id.replace('prod-', '').toUpperCase().replace(/[^A-Z0-9]/g, '')}-${size.replace(/[^A-Za-z0-9]/g, '').toUpperCase()}-${color.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 5)}`,
+    })),
+  );
+  const image = productImagePath(entry.id);
+  return {
+    id: entry.id,
+    name: entry.name,
+    description: `${entry.name} is a ${entry.style.toLowerCase()} ${entry.material.toLowerCase()} piece designed for ${entry.occasion.toLowerCase()} occasions. Thoughtful tailoring, a refined finish, and wearable comfort make it a versatile choice for ${entry.gender.toLowerCase()} wardrobes.`,
+    price: entry.price,
+    originalPrice: entry.originalPrice,
+    category: entry.category,
+    image,
+    images: [image],
+    rating: entry.rating,
+    reviewCount: entry.reviews,
+    variants,
+    tags: [entry.category, entry.occasion.toLowerCase(), ...entry.colors.map((color) => color.toLowerCase()), entry.material.toLowerCase(), entry.style.toLowerCase(), entry.gender.toLowerCase()],
+    specifications: {
+      Material: entry.material,
+      Occasion: entry.occasion,
+      Style: entry.style,
+      Gender: entry.gender,
+      AvailableColors: entry.colors.join(', '),
+      AvailableSizes: clothingSizes.join(', '),
+      Care: entry.category === 'shoes' || entry.category === 'handbags' ? 'Wipe clean with a soft cloth' : 'Follow care label instructions',
+    },
+  };
+}
+
+// Deliberately data-driven so the product/variant/inventory seed remains deterministic.
+// Each entry produces inventory for every listed size/color variant through catalogProduct().
+const catalogExpansion: Product[] = [
+  // Wedding Dresses
+  ['saree','Merlot Satin A-Line Wedding Dress','wedding-dresses',4699,6299,['Wine','Burgundy'],'Satin','Wedding','Women','A-Line',['XS','S','M','L'],186,4.7],
+  ['psaree','Crimson Embroidered Bridal Lehenga Dress','wedding-dresses',7999,10499,['Red','Maroon'],'Silk Blend','Wedding','Women','Embroidered Lehenga',['S','M','L','XL'],132,4.8],
+  ['saree','Blush Tulle Garden Wedding Gown','wedding-dresses',5999,7999,['Blush','Pink'],'Tulle','Wedding','Women','Ball Gown',['S','M','L'],98,4.6],
+  ['saree','Emerald Velvet Reception Dress','wedding-dresses',4999,6799,['Emerald','Green'],'Velvet','Wedding Reception','Women','Wrap Midi',['S','M','L','XL'],114,4.5],
+  ['prod-wedding-dress-009','Ivory Chikankari Bridal Anarkali','wedding-dresses',6499,8499,['Ivory','Cream'],'Georgette','Wedding','Women','Anarkali',['S','M','L','XL','XXL'],76,4.7],
+  // Dresses
+  ['prod-dress-001','Navy Pleated Midi Dress','dresses',2399,3199,['Navy','Sky Blue'],'Crepe','Office & Brunch','Women','Pleated Midi',['XS','S','M','L','XL'],143,4.5],
+  ['prod-dress-002','Mustard Linen Shirt Dress','dresses',1999,2699,['Mustard','Beige'],'Linen','Casual','Women','Shirt Dress',['S','M','L','XL'],109,4.4],
+  ['prod-dress-003','Black Wrap Cocktail Dress','dresses',3499,4599,['Black'],'Satin','Party','Women','Wrap Cocktail',['XS','S','M','L','XL'],201,4.7],
+  ['prod-dress-004','Lavender Floral Maxi Dress','dresses',2799,3799,['Lavender','Purple'],'Chiffon','Vacation','Women','Floral Maxi',['S','M','L','XL'],87,4.5],
+  ['prod-dress-005','Red Ribbed Knit Bodycon Dress','dresses',1799,2499,['Red','Maroon'],'Ribbed Knit','Date Night','Women','Bodycon',['XS','S','M','L'],166,4.3],
+  // Sarees
+  ['prod-saree-002','Ruby Red Art Silk Saree','sarees',2499,3499,['Red','Maroon'],'Art Silk','Wedding','Women','Zari Border',['Free Size'],192,4.6],
+  ['prod-saree-003','Crimson Chiffon Printed Saree','sarees',1499,2199,['Red','Pink'],'Chiffon','Casual','Women','Printed',['Free Size'],121,4.3],
+  ['prod-saree-004','Emerald Kanjeevaram Silk Saree','sarees',10999,12999,['Emerald','Green'],'Kanjeevaram Silk','Wedding','Women','Temple Border',['Free Size'],68,4.9],
+  ['prod-saree-005','Navy Blue Georgette Party Saree','sarees',2999,4199,['Navy','Blue'],'Georgette','Party','Women','Sequin Border',['Free Size'],153,4.5],
+  ['prod-saree-006','Sunshine Yellow Cotton Mulmul Saree','sarees',1199,1699,['Yellow','Mustard'],'Mulmul Cotton','Daily','Women','Hand Block Print',['Free Size'],94,4.4],
+  // Kurtis
+  ['prod-kurti-002','Ivory Embroidered Anarkali Kurti','kurtis',1899,2699,['Ivory','Cream'],'Rayon','Festive','Women','Anarkali',['S','M','L','XL','XXL'],174,4.6],
+  ['prod-kurti-003','Indigo Ajrakh Straight Kurti','kurtis',1399,1999,['Blue','Indigo'],'Cotton','Casual','Women','Straight Cut',['S','M','L','XL'],115,4.4],
+  ['prod-kurti-004','Rose Pink Mirror Work Kurti','kurtis',2199,2999,['Pink','Blush'],'Viscose','Party','Women','Flared',['S','M','L','XL'],83,4.5],
+  ['prod-kurti-005','Mustard Ikat A-Line Kurti','kurtis',999,1499,['Mustard','Yellow'],'Cotton','Daily','Women','A-Line',['S','M','L','XL','XXL'],146,4.3],
+  ['prod-kurti-006','Teal Chanderi Panelled Kurti','kurtis',2499,3499,['Teal','Green'],'Chanderi','Festive','Women','Panelled',['S','M','L','XL'],67,4.7],
+  // Shirts
+  ['prod-shirt-001','Classic Oxford Cotton Shirt','shirts',1499,2099,['White','Sky Blue','Blue'],'Oxford Cotton','Office','Men','Regular Fit',['S','M','L','XL','XXL'],247,4.6],
+  ['prod-shirt-002','Navy Slim Fit Poplin Shirt','shirts',1799,2499,['Navy','Blue'],'Poplin Cotton','Formal','Men','Slim Fit',['S','M','L','XL'],186,4.5],
+  ['prod-shirt-003','Olive Linen Resort Shirt','shirts',1599,2299,['Olive','Green'],'Linen','Vacation','Men','Relaxed Fit',['S','M','L','XL','XXL'],96,4.4],
+  ['prod-shirt-004','Burgundy Checked Flannel Shirt','shirts',1299,1899,['Burgundy','Maroon'],'Brushed Cotton','Casual','Men','Checked',['S','M','L','XL'],138,4.3],
+  ['prod-shirt-005','Black Mandarin Collar Shirt','shirts',2199,2999,['Black'],'Cotton Satin','Party','Men','Mandarin Collar',['S','M','L','XL','XXL'],72,4.6],
+  // T-Shirts
+  ['prod-tshirt-001','White Organic Cotton Crew T-Shirt','t-shirts',699,999,['White','Cream'],'Organic Cotton','Daily','Unisex','Crew Neck',['XS','S','M','L','XL','XXL'],326,4.5],
+  ['prod-tshirt-002','Navy Pocket Polo T-Shirt','t-shirts',999,1499,['Navy','Blue'],'Pique Cotton','Casual','Men','Polo',['S','M','L','XL','XXL'],192,4.4],
+  ['prod-tshirt-003','Blush Oversized Graphic T-Shirt','t-shirts',899,1299,['Blush','Pink'],'Cotton Jersey','Casual','Women','Oversized',['XS','S','M','L','XL'],156,4.3],
+  ['prod-tshirt-004','Black Performance Training T-Shirt','t-shirts',1199,1699,['Black','Grey'],'Moisture-Wicking Polyester','Gym','Men','Athletic',['S','M','L','XL','XXL'],213,4.6],
+  ['prod-tshirt-005','Lavender Ribbed Baby Tee','t-shirts',799,1199,['Lavender','Purple'],'Ribbed Cotton','Casual','Women','Fitted',['XS','S','M','L'],119,4.4],
+  // Jeans
+  ['prod-jeans-002','Straight Fit Blue Denim Jeans','jeans',2499,3299,['Blue','Indigo'],'Stretch Denim','Casual','Men','Straight Fit',['28','30','32','34','36'],276,4.6],
+  ['prod-jeans-003','Black Mom Fit High Rise Jeans','jeans',2299,3099,['Black'],'Cotton Denim','Casual','Women','Mom Fit',['26','28','30','32','34'],188,4.5],
+  ['prod-jeans-004','Light Wash Wide Leg Jeans','jeans',2799,3699,['Sky Blue','Blue'],'Rigid Denim','Weekend','Women','Wide Leg',['26','28','30','32','34'],143,4.4],
+  ['prod-jeans-005','Charcoal Tapered Comfort Jeans','jeans',1999,2799,['Charcoal','Black'],'Stretch Denim','Daily','Men','Tapered',['28','30','32','34','36'],127,4.3],
+  ['prod-jeans-006','White Cropped Flare Jeans','jeans',2599,3499,['White','Cream'],'Cotton Denim','Brunch','Women','Cropped Flare',['26','28','30','32'],91,4.5],
+  // Trousers
+  ['prod-trouser-001','Beige Pleated Wide Leg Trousers','trousers',2299,3199,['Beige','Cream'],'Linen Blend','Office','Women','Wide Leg',['XS','S','M','L','XL'],122,4.5],
+  ['prod-trouser-002','Charcoal Formal Slim Trousers','trousers',1999,2799,['Charcoal','Black'],'Poly-Viscose','Formal','Men','Slim Fit',['30','32','34','36'],189,4.6],
+  ['prod-trouser-003','Olive Cargo Utility Trousers','trousers',2499,3399,['Olive','Green'],'Cotton Twill','Casual','Unisex','Cargo',['S','M','L','XL'],151,4.4],
+  ['prod-trouser-004','Navy Cigarette Ankle Trousers','trousers',1799,2499,['Navy','Blue'],'Stretch Crepe','Office','Women','Cigarette',['XS','S','M','L','XL'],106,4.3],
+  ['prod-trouser-005','Brown Corduroy Relaxed Trousers','trousers',2999,3999,['Brown','Beige'],'Corduroy','Winter','Men','Relaxed Fit',['30','32','34','36'],64,4.5],
+  // Jackets
+  ['prod-jacket-002','Black Vegan Leather Biker Jacket','jackets',4999,6499,['Black'],'Vegan Leather','Party','Women','Biker',['S','M','L','XL'],157,4.6],
+  ['prod-jacket-003','Camel Wool Blend Overcoat','jackets',6499,7999,['Camel','Brown'],'Wool Blend','Winter','Women','Longline Coat',['S','M','L','XL'],83,4.7],
+  ['prod-jacket-004','Olive Quilted Puffer Jacket','jackets',3799,4999,['Olive','Green'],'Recycled Polyester','Winter','Unisex','Puffer',['S','M','L','XL','XXL'],134,4.5],
+  ['prod-jacket-005','Indigo Denim Trucker Jacket','jackets',2999,3999,['Indigo','Blue'],'Cotton Denim','Casual','Men','Trucker',['S','M','L','XL','XXL'],176,4.4],
+  ['prod-jacket-006','Ivory Tweed Cropped Jacket','jackets',4599,5999,['Ivory','Cream'],'Tweed','Office','Women','Cropped',['XS','S','M','L'],71,4.6],
+  // Shoes
+  ['prod-shoe-002','White Leather Court Sneakers','shoes',2499,3499,['White','Cream'],'Leather','Casual','Unisex','Low Top',['5','6','7','8','9','10'],239,4.6],
+  ['prod-shoe-003','Black Suede Block Heel Pumps','shoes',3299,4499,['Black'],'Suede','Party','Women','Block Heel',['4','5','6','7','8'],117,4.5],
+  ['prod-shoe-004','Tan Leather Oxford Shoes','shoes',4999,6499,['Tan','Brown'],'Genuine Leather','Formal','Men','Oxford',['6','7','8','9','10'],92,4.7],
+  ['prod-shoe-005','Rose Gold Embellished Juttis','shoes',1899,2699,['Rose Gold','Pink'],'Silk Brocade','Wedding','Women','Jutti',['4','5','6','7','8'],145,4.5],
+  ['prod-shoe-006','Sky Blue Running Trainers','shoes',2799,3799,['Sky Blue','Blue','White'],'Mesh Knit','Gym','Unisex','Running',['5','6','7','8','9','10'],204,4.4],
+  // Handbags
+  ['prod-handbag-002','Black Quilted Chain Shoulder Bag','handbags',2899,3999,['Black'],'Vegan Leather','Party','Women','Quilted Shoulder',['Small'],178,4.5],
+  ['prod-handbag-003','Tan Structured Office Tote','handbags',2499,3499,['Tan','Brown'],'Faux Leather','Office','Women','Structured Tote',['Large'],131,4.4],
+  ['prod-handbag-004','Ivory Beaded Potli Bag','handbags',1499,2199,['Ivory','Gold'],'Silk','Wedding','Women','Potli',['One Size'],86,4.6],
+  ['prod-handbag-005','Burgundy Suede Sling Bag','handbags',1999,2999,['Burgundy','Wine'],'Suede','Date Night','Women','Sling',['Small'],104,4.3],
+  ['prod-handbag-006','Olive Canvas Weekender Bag','handbags',3299,4599,['Olive','Green'],'Canvas','Travel','Unisex','Weekender',['Large'],63,4.5],
+  // Earrings
+  ['prod-earrings-002','Pearl Drop Earrings','earrings',699,999,['Pearl White','Gold'],'Freshwater Pearl','Wedding','Women','Drop',['One Size'],254,4.7],
+  ['prod-earrings-003','Ruby Stone Chandbali Earrings','earrings',1299,1799,['Red','Gold'],'Gold Plated Brass','Wedding','Women','Chandbali',['One Size'],163,4.6],
+  ['prod-earrings-004','Silver Crystal Hoop Earrings','earrings',899,1299,['Silver'],'Sterling Silver Plated','Party','Women','Hoop',['One Size'],187,4.5],
+  ['prod-earrings-005','Emerald Kundan Jhumka Earrings','earrings',1499,2099,['Emerald','Gold'],'Kundan Stonework','Festive','Women','Jhumka',['One Size'],119,4.7],
+  ['prod-earrings-006','Blush Enamel Stud Earrings','earrings',499,749,['Blush','Pink'],'Enamel Brass','Casual','Women','Stud',['One Size'],141,4.3],
+  // Necklaces
+  ['prod-necklace-002','Emerald Kundan Choker Necklace','necklaces',3299,4499,['Emerald','Gold'],'Kundan Stonework','Wedding','Women','Choker',['Adjustable'],97,4.7],
+  ['prod-necklace-003','Minimal Gold Bar Necklace','necklaces',999,1499,['Gold'],'Gold Plated Steel','Daily','Women','Minimal',['Adjustable'],212,4.5],
+  ['prod-necklace-004','Ruby Temple Pendant Necklace','necklaces',2499,3499,['Red','Gold'],'Antique Gold Plated','Festive','Women','Temple',['Adjustable'],88,4.6],
+  ['prod-necklace-005','Silver Layered Moonstone Necklace','necklaces',1599,2299,['Silver','Blue'],'Silver Plated Alloy','Party','Women','Layered',['Adjustable'],103,4.4],
+  ['prod-necklace-006','Ivory Pearl Bridal Choker','necklaces',2199,2999,['Ivory','Pearl White'],'Freshwater Pearl','Wedding','Women','Bridal Choker',['Adjustable'],136,4.7],
+  // Wedding Accessories
+  ['prod-wedding-accessory-001','Gold Crystal Bridal Hair Vine','wedding-accessories',1199,1699,['Gold'],'Crystal Alloy','Wedding','Women','Hair Vine',['One Size'],109,4.5],
+  ['prod-wedding-accessory-002','Ivory Embroidered Bridal Clutch','wedding-accessories',1999,2899,['Ivory','Cream'],'Silk Embroidery','Wedding','Women','Clutch',['One Size'],74,4.6],
+  ['prod-wedding-accessory-003','Rose Gold Floral Maang Tikka','wedding-accessories',799,1199,['Rose Gold','Gold'],'Gold Plated Brass','Wedding','Women','Maang Tikka',['One Size'],151,4.4],
+  ['prod-wedding-accessory-004','Maroon Velvet Wedding Stole','wedding-accessories',1499,2199,['Maroon','Wine'],'Velvet','Wedding','Women','Embroidered Stole',['One Size'],82,4.5],
+  ['prod-wedding-accessory-005','Silver Crystal Bridal Belt','wedding-accessories',1699,2499,['Silver'],'Crystal Mesh','Wedding','Women','Bridal Belt',['Adjustable'],65,4.6],
+  // Party Wear
+  ['prod-party-wear-001','Black Sequin One-Shoulder Party Dress','party-wear',3899,5199,['Black'],'Sequin Mesh','Party','Women','One-Shoulder',['XS','S','M','L','XL'],193,4.7],
+  ['prod-party-wear-002','Wine Velvet Ruched Party Dress','party-wear',3299,4499,['Wine','Burgundy','Black'],'Velvet','Party','Women','Ruched Midi',['S','M','L','XL'],148,4.6],
+  ['prod-party-wear-003','Cobalt Blue Satin Co-ord Set','party-wear',4599,5999,['Blue','Navy'],'Satin','Party','Women','Co-ord',['S','M','L','XL'],79,4.5],
+  ['prod-party-wear-004','Silver Metallic Halter Jumpsuit','party-wear',5499,6999,['Silver'],'Metallic Jersey','Party','Women','Halter Jumpsuit',['XS','S','M','L'],68,4.6],
+  ['prod-party-wear-005','Red Brocade Nehru Jacket Set','party-wear',6999,8999,['Red','Maroon'],'Brocade Silk','Party','Men','Nehru Jacket',['S','M','L','XL','XXL'],94,4.7],
+].map(([id, name, category, price, originalPrice, colors, material, occasion, gender, style, sizes, reviews, rating]) =>
+  catalogProduct({ id: id as string, name: name as string, category: category as Product['category'], price: price as number, originalPrice: originalPrice as number | undefined, colors: colors as string[], material: material as string, occasion: occasion as string, gender: gender as 'Women' | 'Men' | 'Unisex', style: style as string, sizes: sizes as string[], reviews: reviews as number, rating: rating as number }),
+);
+
+const seededProducts: Product[] = [
   {
     id: 'prod-wedding-dress-001',
     name: 'Wine Satin Wedding Dress',
@@ -232,7 +385,15 @@ export const products: Product[] = [
     tags: ['jacket', 'blazer', 'formal'],
     specifications: { Fabric: 'Wool Blend', Fit: 'Slim', Lining: 'Polyester', Care: 'Dry Clean Only' },
   },
+  ...catalogExpansion,
 ];
+
+// Every product is assigned its own local illustration while the existing
+// product image contract remains unchanged for the API and frontend.
+export const products: Product[] = seededProducts.map((product) => {
+  const image = productImagePath(product.id);
+  return { ...product, image, images: [image] };
+});
 
 export const demoOrder: Order = {
   id: 'order-001',

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, ShoppingCart, Zap, GitCompare, Check, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Star, ShoppingBag, Zap, GitCompare, Check, ArrowLeft, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { BuyerLayout } from '../../components/layout/BuyerLayout';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { AIBadge, AIMatchScore } from '../../components/ai/AIComponents';
 import { ProductGrid } from '../../components/product/ProductCard';
@@ -73,8 +72,8 @@ export function ProductDetailPage() {
     return (
       <BuyerLayout>
         <div className="flex flex-col items-center justify-center py-32">
-          <Loader2 className="mb-4 h-10 w-10 animate-spin text-violet-ai" />
-          <p className="text-sm text-muted dark:text-muted-light">Loading product...</p>
+          <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#D4AF37]" />
+          <p className="font-serif text-sm italic text-[#9E9E9E]">Retrieving archival piece details...</p>
         </div>
       </BuyerLayout>
     );
@@ -83,14 +82,16 @@ export function ProductDetailPage() {
   if (notFound || (!loading && !product)) {
     return (
       <BuyerLayout>
-        <div className="py-16 text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-error" />
-          <h2 className="text-xl font-semibold">Product not found</h2>
-          <p className="mt-2 text-sm text-muted dark:text-muted-light">
-            The product you are looking for may have been removed or the link is invalid.
+        <div className="py-24 text-center rounded-[4px] border border-[rgba(255,255,255,0.06)] bg-[#131314]">
+          <AlertCircle className="mx-auto mb-4 h-8 w-8 text-[#D4AF37]" />
+          <h2 className="font-serif text-2xl font-normal text-[#E5E2E3]">Archival Piece Not Found</h2>
+          <p className="mt-2 text-xs text-[#9E9E9E]">
+            The requested creation may have been archived or is temporarily unavailable.
           </p>
-          <Link to="/products" className="mt-4 inline-block text-violet-ai hover:underline">
-            Back to products
+          <Link to="/products" className="mt-6 inline-block">
+            <Button variant="primary" size="sm">
+              Return to Catalog
+            </Button>
           </Link>
         </div>
       </BuyerLayout>
@@ -100,12 +101,14 @@ export function ProductDetailPage() {
   if (error) {
     return (
       <BuyerLayout>
-        <div className="py-16 text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-error" />
-          <h2 className="text-xl font-semibold">Unable to load product.</h2>
-          <p className="mt-2 text-sm text-muted dark:text-muted-light">{error}</p>
-          <Link to="/products" className="mt-4 inline-block text-violet-ai hover:underline">
-            Back to products
+        <div className="py-20 text-center rounded-[4px] border border-rose-500/30 bg-rose-950/20">
+          <AlertCircle className="mx-auto mb-4 h-8 w-8 text-rose-400" />
+          <h2 className="font-serif text-xl font-normal text-rose-300">Catalog Access Error</h2>
+          <p className="mt-2 text-xs text-rose-400/80">{error}</p>
+          <Link to="/products" className="mt-6 inline-block">
+            <Button variant="outline" size="sm">
+              Return to Catalog
+            </Button>
           </Link>
         </div>
       </BuyerLayout>
@@ -125,7 +128,7 @@ export function ProductDetailPage() {
     setAdding(true);
     const ok = await addToCart({ productId: product.id, quantity: 1, size: selectedSize, color: selectedColor });
     setAdding(false);
-    if (ok) showToast('Added to cart', 'success');
+    if (ok) showToast('Piece added to shopping bag', 'success');
   };
 
   const handleBuyNow = async () => {
@@ -134,33 +137,55 @@ export function ProductDetailPage() {
     const ok = await addToCart({ productId: product.id, quantity: 1, size: selectedSize, color: selectedColor });
     setBuyingNow(false);
     if (ok) {
-      showToast('Added to cart', 'success');
+      showToast('Piece prepared for checkout', 'success');
       navigate('/checkout');
     }
   };
 
   return (
     <BuyerLayout>
-      <Link to="/products" className="mb-6 inline-flex items-center gap-1 text-sm text-muted hover:text-violet-ai dark:text-muted-light">
-        <ArrowLeft className="h-4 w-4" /> Back to products
+      {/* Back Link */}
+      <Link
+        to="/products"
+        className="group mb-8 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-[#9E9E9E] transition-colors hover:text-[#D4AF37]"
+      >
+        <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
+        <span>Return to Catalog</span>
       </Link>
 
-      <div className="grid gap-12 lg:grid-cols-2">
-        <div>
-          <div className="mb-4 aspect-[3/4] overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark">
+      {/* Main Product Editorial Grid */}
+      <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+        {/* Left: Gallery Rail (3:4 ratio) */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#0E0E0F] shadow-[0_15px_40px_rgba(0,0,0,0.8)]">
             <img
               src={product.images[selectedImage] || product.image}
               alt={product.name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover object-top"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0C]/40 via-transparent to-black/20 pointer-events-none" />
+
+            {/* Badges */}
+            <div className="absolute left-4 top-4 flex flex-col gap-2 z-10">
+              {product.aiMatchScore && (
+                <AIBadge>Match {product.aiMatchScore}%</AIBadge>
+              )}
+              <Badge variant="default">{product.category.replace(/-/g, ' ')}</Badge>
+            </div>
           </div>
+
+          {/* Thumbnail Rail */}
           {product.images.length > 1 && (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               {product.images.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => setSelectedImage(i)}
-                  className={`h-20 w-16 overflow-hidden rounded-lg border-2 ${selectedImage === i ? 'border-violet-ai' : 'border-transparent'}`}
+                  className={`relative h-24 w-18 overflow-hidden rounded-[3px] border transition-all duration-200 cursor-pointer ${
+                    selectedImage === i
+                      ? 'border-[#D4AF37] shadow-[0_0_15px_-3px_rgba(212,175,55,0.35)]'
+                      : 'border-[rgba(255,255,255,0.08)] opacity-60 hover:opacity-100'
+                  }`}
                 >
                   <img src={img} alt="" className="h-full w-full object-cover" />
                 </button>
@@ -169,27 +194,53 @@ export function ProductDetailPage() {
           )}
         </div>
 
-        <div>
-          {product.aiMatchScore && <AIBadge>AI Recommended</AIBadge>}
-          <h1 className="mt-2 text-3xl font-bold">{product.name}</h1>
-          <div className="mt-2 flex items-center gap-2">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="text-sm">{product.rating} ({product.reviewCount} reviews)</span>
-          </div>
-          <div className="mt-4 flex items-baseline gap-3">
-            <span className="text-3xl font-bold">{formatPrice(product.price)}</span>
-            {product.originalPrice && (
-              <span className="text-lg text-muted line-through">{formatPrice(product.originalPrice)}</span>
-            )}
+        {/* Right: Garment Dossier & Ordering */}
+        <div className="lg:col-span-5 space-y-6">
+          <div>
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.24em] text-[#D4AF37]">
+              ATELIER PIECE #{product.id.slice(-4).toUpperCase()}
+            </span>
+            <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-normal text-[#E5E2E3] leading-tight">
+              {product.name}
+            </h1>
+
+            <div className="mt-3 flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <Star className="h-3.5 w-3.5 fill-[#D4AF37] text-[#D4AF37]" />
+                <span className="text-xs font-semibold text-[#E2E2E2]">{product.rating}</span>
+              </div>
+              <span className="text-xs text-[#737373]">·</span>
+              <span className="text-xs text-[#9E9E9E]">{product.reviewCount} verified client impressions</span>
+            </div>
+
+            <div className="mt-5 flex items-baseline gap-4 border-b border-[rgba(255,255,255,0.08)] pb-5">
+              <span className="font-sans text-3xl font-semibold text-[#E5E2E3]">
+                {formatPrice(product.price)}
+              </span>
+              {product.originalPrice && (
+                <span className="font-sans text-sm text-[#737373] line-through">
+                  {formatPrice(product.originalPrice)}
+                </span>
+              )}
+            </div>
           </div>
 
-          <p className="mt-4 text-muted dark:text-muted-light">{product.description}</p>
+          <p className="font-sans text-xs sm:text-sm leading-relaxed text-[#9E9E9E]">
+            {product.description}
+          </p>
 
-          <div className="mt-6">
-            <p className="mb-2 text-sm font-medium">Size</p>
+          {/* Size Swatches */}
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center justify-between">
+              <label className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#E5E2E3]">
+                Select Size
+              </label>
+              <span className="text-[11px] text-[#737373]">Couture Standard</span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {sizes.map((size) => {
                 const sizeHasStock = product.variants.some((v) => v.size === size && v.stock > 0);
+                const isSelected = selectedSize === size;
                 return (
                   <button
                     key={size}
@@ -199,7 +250,13 @@ export function ProductDetailPage() {
                       if (firstColor) setSelectedColor(firstColor.color);
                     }}
                     disabled={!sizeHasStock}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${selectedSize === size ? 'border-violet-ai bg-violet-ai/10 text-violet-ai' : sizeHasStock ? 'border-border hover:border-violet-ai dark:border-border-dark' : 'border-border/50 text-muted line-through opacity-50 cursor-not-allowed dark:border-border-dark/50'}`}
+                    className={`min-w-12 rounded-[3px] px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border border-[#D4AF37] bg-[#D4AF37] text-[#0B0B0C] shadow-[0_0_15px_-3px_rgba(212,175,55,0.4)]'
+                        : sizeHasStock
+                        ? 'border border-[rgba(255,255,255,0.1)] bg-[#141417] text-[#E2E2E2] hover:border-[rgba(212,175,55,0.4)]'
+                        : 'border border-[rgba(255,255,255,0.04)] bg-transparent text-[#555] line-through cursor-not-allowed'
+                    }`}
                   >
                     {size}
                   </button>
@@ -208,82 +265,120 @@ export function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="mt-4">
-            <p className="mb-2 text-sm font-medium">Color</p>
+          {/* Color Swatches */}
+          <div className="space-y-2">
+            <label className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#E5E2E3]">
+              Atelier Palette
+            </label>
             <div className="flex flex-wrap gap-2">
-              {colors.map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${selectedColor === color ? 'border-violet-ai bg-violet-ai/10 text-violet-ai' : 'border-border hover:border-violet-ai dark:border-border-dark'}`}
-                >
-                  {color}
-                </button>
-              ))}
+              {colors.map((color) => {
+                const isSelected = selectedColor === color;
+                return (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={`rounded-[3px] px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border border-[#D4AF37] bg-[#1C1B1C] text-[#D4AF37] shadow-[0_0_12px_-2px_rgba(212,175,55,0.25)]'
+                        : 'border border-[rgba(255,255,255,0.08)] bg-[#141417] text-[#9E9E9E] hover:border-[rgba(255,255,255,0.2)] hover:text-[#E5E2E3]'
+                    }`}
+                  >
+                    {color}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="mt-4">
+          {/* Stock Indicator */}
+          <div>
             {selectedVariant && selectedVariant.stock > 0 ? (
-              <Badge variant="success">In Stock ({selectedVariant.stock} available)</Badge>
+              <Badge variant="success">Available · {selectedVariant.stock} Pieces Allocated</Badge>
             ) : (
-              <Badge variant="error">Out of Stock — Please select a different size/color</Badge>
+              <Badge variant="error">Depleted in Selected Variant</Badge>
             )}
           </div>
 
-          <div className="mt-6 flex gap-3 flex-wrap">
-            <Button variant="primary" onClick={handleAddToCart} disabled={disabled}>
+          {/* Actions CTA */}
+          <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleAddToCart}
+              disabled={disabled}
+              className="flex-1"
+            >
               {adding ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Adding...
                 </>
               ) : (
                 <>
-                  <ShoppingCart className="h-4 w-4" /> Add to Cart
+                  <ShoppingBag className="h-4 w-4" /> Add to Shopping Bag
                 </>
               )}
             </Button>
-            <Button variant="ai" onClick={handleBuyNow} disabled={disabled}>
+
+            <Button
+              variant="ai"
+              size="lg"
+              onClick={handleBuyNow}
+              disabled={disabled}
+              className="flex-1"
+            >
               {buyingNow ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Moving to Checkout...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Preparing...
                 </>
               ) : (
                 <>
-                  <Zap className="h-4 w-4" /> Buy Now
+                  <Zap className="h-4 w-4 text-[#D4AF37]" /> Instant Acquisition
                 </>
               )}
             </Button>
-            <Button variant="outline" onClick={() => addToCompare(product.id)}>
+
+            <button
+              onClick={() => addToCompare(product.id)}
+              className="flex h-11 w-11 items-center justify-center rounded-[4px] border border-[rgba(255,255,255,0.12)] bg-[#141417] text-[#9E9E9E] hover:border-[rgba(212,175,55,0.4)] hover:text-[#D4AF37] transition-colors cursor-pointer shrink-0"
+              title="Compare Piece"
+            >
               <GitCompare className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
 
+          {/* AI Stylist Concierge Appraisal Card */}
           {product.aiMatchScore && (
-            <Card className="mt-8">
-              <div className="flex items-start gap-6">
-                <AIMatchScore score={product.aiMatchScore} />
-                <div>
-                  <h3 className="mb-2 font-semibold">Recommended because this product:</h3>
-                  <ul className="space-y-1">
-                    {product.aiReasons?.map((r) => (
-                      <li key={r} className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-success" /> {r}
-                      </li>
-                    ))}
-                  </ul>
+            <div className="relative overflow-hidden rounded-[4px] border border-[rgba(212,175,55,0.35)] bg-gradient-to-br from-[#1C1B1C] via-[#141417] to-[#0E0E0F] p-5 shadow-[0_0_30px_-10px_rgba(212,175,55,0.15)]">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+                    Concierge Styling Appraisal
+                  </span>
                 </div>
+                <AIMatchScore score={product.aiMatchScore} />
               </div>
-            </Card>
+              <ul className="space-y-1.5 pt-1 border-t border-[rgba(255,255,255,0.06)]">
+                {product.aiReasons?.map((reason, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-xs text-[#E5E2E3]/90">
+                    <Check className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
-          <div className="mt-8">
-            <h3 className="mb-3 font-semibold">Specifications</h3>
-            <dl className="grid grid-cols-2 gap-2 text-sm">
-              {Object.entries(product.specifications).map(([key, val]) => (
-                <div key={key}>
-                  <dt className="text-muted dark:text-muted-light">{key}</dt>
-                  <dd className="font-medium">{val}</dd>
+          {/* Specifications Table */}
+          <div className="border-t border-[rgba(255,255,255,0.08)] pt-6">
+            <h3 className="mb-3 font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-[#E5E2E3]">
+              Garment Specifications
+            </h3>
+            <dl className="grid grid-cols-2 gap-3 text-xs">
+              {Object.entries(product.specifications).map(([k, v]) => (
+                <div key={k} className="rounded-[3px] border border-[rgba(255,255,255,0.06)] bg-[#131314] p-2.5">
+                  <dt className="text-[10px] uppercase tracking-wider text-[#737373]">{k}</dt>
+                  <dd className="mt-0.5 font-medium text-[#E2E2E2]">{v}</dd>
                 </div>
               ))}
             </dl>
@@ -291,9 +386,17 @@ export function ProductDetailPage() {
         </div>
       </div>
 
+      {/* Related Pieces */}
       {related.length > 0 && (
-        <div className="mt-16">
-          <h2 className="mb-6 text-2xl font-bold">Related Products</h2>
+        <div className="mt-24 border-t border-[rgba(255,255,255,0.08)] pt-16">
+          <div className="mb-8">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.24em] text-[#D4AF37]">
+              COMPLEMENTARY SILHOUETTES
+            </span>
+            <h2 className="font-serif text-2xl font-normal text-[#E5E2E3] sm:text-3xl">
+              Related Haute Pieces
+            </h2>
+          </div>
           <ProductGrid products={related} />
         </div>
       )}
@@ -329,12 +432,12 @@ export function ComparePage() {
   if (!loading && validProducts.length === 0) {
     return (
       <BuyerLayout>
-        <div className="py-16 text-center">
-          <GitCompare className="mx-auto mb-4 h-12 w-12 text-muted" />
-          <h2 className="text-xl font-semibold">No products to compare</h2>
-          <p className="mt-2 text-muted dark:text-muted-light">Add products using the compare button</p>
-          <Link to="/products">
-            <Button variant="ai" className="mt-4">Browse Products</Button>
+        <div className="py-24 text-center rounded-[4px] border border-[rgba(255,255,255,0.06)] bg-[#131314]">
+          <GitCompare className="mx-auto mb-4 h-8 w-8 text-[#737373]" />
+          <h2 className="font-serif text-2xl font-normal text-[#E5E2E3]">Comparison Archive Empty</h2>
+          <p className="mt-2 text-xs text-[#9E9E9E]">Add pieces from the collection to evaluate silhouettes side-by-side.</p>
+          <Link to="/products" className="mt-6 inline-block">
+            <Button variant="primary" size="sm">Browse Collection</Button>
           </Link>
         </div>
       </BuyerLayout>
@@ -348,44 +451,60 @@ export function ComparePage() {
 
   return (
     <BuyerLayout>
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Compare Products</h1>
-        <Button variant="ghost" size="sm" onClick={clearCompare}>Clear All</Button>
+      <div className="mb-10 flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] pb-6">
+        <div>
+          <span className="font-sans text-[10px] font-bold uppercase tracking-[0.24em] text-[#D4AF37]">
+            SIDE-BY-SIDE EVALUATION
+          </span>
+          <h1 className="font-serif text-3xl font-normal text-[#E5E2E3]">Compare Archival Pieces</h1>
+        </div>
+        <Button variant="outline" size="sm" onClick={clearCompare}>Clear Comparison</Button>
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-ai" />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px] border-collapse">
+      <div className="overflow-x-auto rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#131314]">
+        <table className="w-full min-w-[650px] border-collapse text-left">
           <thead>
-            <tr>
-              <th className="p-4 text-left text-sm font-medium text-muted">Attribute</th>
+            <tr className="border-b border-[rgba(255,255,255,0.08)] bg-[#0E0E0F]">
+              <th className="p-5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#737373] w-48">Piece Attribute</th>
               {validProducts.map((p) => p && (
-                <th key={p.id} className={`p-4 text-left ${p.id === bestMatch?.id ? 'bg-violet-ai/5' : ''}`}>
-                  <button onClick={() => removeFromCompare(p.id)} className="float-right text-muted hover:text-error">×</button>
-                  <img src={p.image} alt={p.name} className="mb-2 h-32 w-24 rounded-lg object-cover" />
-                  <p className="font-medium">{p.name}</p>
-                  {p.id === bestMatch?.id && <Badge variant="ai" className="mt-1">Best Match</Badge>}
+                <th key={p.id} className={`p-5 ${p.id === bestMatch?.id ? 'bg-[#D4AF37]/5 border-x border-[#D4AF37]/20' : ''}`}>
+                  <button
+                    onClick={() => removeFromCompare(p.id)}
+                    className="float-right text-xs text-[#737373] hover:text-rose-400 cursor-pointer"
+                  >
+                    Remove ×
+                  </button>
+                  <img src={p.image} alt={p.name} className="mb-3 h-36 w-28 rounded-[2px] object-cover" />
+                  <p className="font-serif text-sm font-medium text-white">{p.name}</p>
+                  {p.id === bestMatch?.id && (
+                    <div className="mt-2">
+                      <Badge variant="gold">Best Match</Badge>
+                    </div>
+                  )}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[rgba(255,255,255,0.06)] text-xs">
             {[
               { label: 'Price', get: (p: Product) => formatPrice(p.price) },
-              { label: 'AI Match', get: (p: Product) => (p.aiMatchScore ? `${p.aiMatchScore}%` : '—') },
-              { label: 'Rating', get: (p: Product) => `${p.rating} ★` },
-              { label: 'Category', get: (p: Product) => p.category },
-              { label: 'Stock', get: (p: Product) => p.variants.reduce((s, v) => s + v.stock, 0) },
+              { label: 'AI Style Match', get: (p: Product) => (p.aiMatchScore ? `${p.aiMatchScore}%` : '—') },
+              { label: 'Client Rating', get: (p: Product) => `${p.rating} ★ (${p.reviewCount})` },
+              { label: 'Category', get: (p: Product) => p.category.replace(/-/g, ' ') },
+              { label: 'Available Stock', get: (p: Product) => `${p.variants.reduce((s, v) => s + v.stock, 0)} units` },
             ].map((row) => (
-              <tr key={row.label} className="border-t border-border dark:border-border-dark">
-                <td className="p-4 text-sm font-medium text-muted">{row.label}</td>
+              <tr key={row.label}>
+                <td className="p-4 font-sans text-[11px] font-semibold uppercase tracking-wider text-[#737373] bg-[#0E0E0F]/60">
+                  {row.label}
+                </td>
                 {validProducts.map((p) => p && (
-                  <td key={p.id} className={`p-4 text-sm ${p.id === bestMatch?.id ? 'bg-violet-ai/5 font-medium' : ''}`}>
+                  <td key={p.id} className={`p-4 font-sans text-[#E2E2E2] ${p.id === bestMatch?.id ? 'bg-[#D4AF37]/5 border-x border-[#D4AF37]/20 font-semibold' : ''}`}>
                     {String(row.get(p))}
                   </td>
                 ))}

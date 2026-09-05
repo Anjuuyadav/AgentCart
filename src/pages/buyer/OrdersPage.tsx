@@ -61,61 +61,67 @@ export function OrdersPage() {
   return (
     <BuyerLayout>
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Your Orders</h1>
-        <Button variant="ghost" size="sm" onClick={handleRetry} disabled={ordersLoading}>
-          <RefreshCw className={`h-4 w-4 ${ordersLoading ? 'animate-spin' : ''}`} />
-          Refresh
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">Client Archives</span>
+          <h1 className="font-editorial text-3xl md:text-4xl italic text-[#E2E2E2] font-normal tracking-wide mt-1">Acquisitions History</h1>
+          <p className="text-xs text-[#E2E2E2]/60 mt-1 uppercase tracking-[0.14em]">Verified orders settled via autonomous AI protocol</p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={handleRetry} disabled={ordersLoading} className="text-[#E2E2E2]/70 hover:text-[#D4AF37]">
+          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${ordersLoading ? 'animate-spin' : ''}`} />
+          Sync
         </Button>
       </div>
 
       {orders.length === 0 ? (
-        <div className="py-16 text-center">
-          <Package className="mx-auto mb-4 h-12 w-12 text-muted" />
-          <h2 className="text-xl font-semibold">No orders yet</h2>
-          <p className="mt-2 text-muted dark:text-muted-light">Start shopping with AI Buyer</p>
-          <Link to="/buyer"><Button variant="ai" className="mt-4">Try AI Buyer</Button></Link>
-        </div>
+        <Card className="py-20 text-center border-dashed border-white/10">
+          <Package className="mx-auto mb-4 h-10 w-10 text-[#D4AF37]/50" />
+          <h2 className="font-editorial text-2xl italic text-[#E2E2E2]">No Acquisitions Archived</h2>
+          <p className="mt-2 text-xs text-[#E2E2E2]/60 uppercase tracking-[0.16em]">Commission the autonomous stylist to curate your first piece</p>
+          <Link to="/buyer" className="inline-block mt-6">
+            <Button variant="ai">Commission AI Concierge</Button>
+          </Link>
+        </Card>
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <Card key={order.id} hover>
+            <Card key={order.id} hover className="transition-all duration-300">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 {order.productImage ? (
-                  <img src={order.productImage} alt={order.productName} className="h-20 w-16 rounded-lg object-cover" />
+                  <img src={order.productImage} alt={order.productName} className="h-20 w-16 rounded-[2px] object-cover border border-white/10 shrink-0" />
                 ) : (
-                  <div className="h-20 w-16 rounded-lg bg-border/50 dark:bg-border-dark/50 flex items-center justify-center">
-                    <Package className="h-6 w-6 text-muted" />
+                  <div className="h-20 w-16 rounded-[2px] bg-[#141417] border border-white/10 flex items-center justify-center shrink-0">
+                    <Package className="h-5 w-5 text-[#E2E2E2]/40" />
                   </div>
                 )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{order.productName || 'Order item'}</p>
-                    {order.isAiBuyerOrder && <Badge variant="ai">AI Buyer</Badge>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[#E2E2E2] truncate">{order.productName || 'Archival Garment'}</p>
+                    {order.isAiBuyerOrder && <Badge variant="ai">AI Agent Settled</Badge>}
                   </div>
-                  <p className="text-sm text-muted dark:text-muted-light">Order #{order.orderNumber}</p>
-                  <p className="text-sm text-muted dark:text-muted-light">
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-[#D4AF37] mt-0.5">Dossier #{order.orderNumber}</p>
+                  <p className="text-[10px] text-[#E2E2E2]/50 uppercase tracking-widest mt-1">
                     {order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">{formatPrice(order.amount)}</p>
+                <div className="sm:text-right">
+                  <p className="font-mono text-base font-bold text-[#E2E2E2]">{formatPrice(order.amount)}</p>
                   <Badge
                     variant={
                       order.status === 'confirmed' || order.status === 'delivered'
                         ? 'success'
                         : order.status === 'cancelled'
-                        ? 'danger'
+                        ? 'error'
                         : order.status === 'processing' || order.status === 'shipped'
                         ? 'warning'
                         : 'default'
                     }
-                    className="mt-1 capitalize"
+                    className="mt-1.5 capitalize"
                   >
                     {order.status}
                   </Badge>
                 </div>
-                <Link to={`/orders/${order.orderNumber}`}>
-                  <Button variant="outline" size="sm">View</Button>
+                <Link to={`/orders/${order.orderNumber}`} className="shrink-0">
+                  <Button variant="outline" size="sm">Inspect Dossier</Button>
                 </Link>
               </div>
             </Card>
@@ -190,9 +196,9 @@ export function OrderDetailPage() {
   if (loading) {
     return (
       <BuyerLayout>
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-ai" />
-          <p className="mt-4 text-muted dark:text-muted-light">Loading order details...</p>
+        <div className="flex flex-col items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+          <p className="mt-4 text-xs font-mono uppercase tracking-widest text-[#E2E2E2]/60">Decentralized Archive Querying...</p>
         </div>
       </BuyerLayout>
     );
@@ -201,19 +207,19 @@ export function OrderDetailPage() {
   if (error) {
     return (
       <BuyerLayout>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/20">
-          <AlertCircle className="mx-auto mb-3 h-8 w-8 text-red-500" />
-          <p className="font-semibold text-red-700 dark:text-red-400">Unable to load order</p>
-          <p className="mt-1 text-sm text-red-600 dark:text-red-300">{getUserFriendlyMessage({ message: error } as any)}</p>
-          <div className="mt-4 flex justify-center gap-3">
-            <Button variant="outline" onClick={handleRetry}>
-              <RefreshCw className="h-4 w-4" /> Try again
+        <Card className="border-red-500/30 bg-red-950/20 p-8 text-center max-w-lg mx-auto">
+          <AlertCircle className="mx-auto mb-3 h-8 w-8 text-red-400" />
+          <p className="font-semibold text-sm uppercase tracking-wider text-red-400">Unable to load dossier</p>
+          <p className="mt-1 text-xs text-[#E2E2E2]/70">{getUserFriendlyMessage({ message: error } as any)}</p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Button variant="outline" size="sm" onClick={handleRetry}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Retry
             </Button>
             <Link to="/orders">
-              <Button variant="ai">All orders</Button>
+              <Button variant="ai" size="sm">Back to Archives</Button>
             </Link>
           </div>
-        </div>
+        </Card>
       </BuyerLayout>
     );
   }
@@ -221,10 +227,12 @@ export function OrderDetailPage() {
   if (!order) {
     return (
       <BuyerLayout>
-        <div className="py-16 text-center">
-          <h2 className="text-xl font-semibold">Order not found</h2>
-          <p className="mt-2 text-sm text-muted dark:text-muted-light">Order #{id} could not be located.</p>
-          <Link to="/orders" className="mt-4 inline-block text-violet-ai hover:underline">Back to orders</Link>
+        <div className="py-24 text-center">
+          <h2 className="font-editorial text-2xl italic text-[#E2E2E2]">Acquisition Dossier Not Found</h2>
+          <p className="mt-2 text-xs text-[#E2E2E2]/60 uppercase tracking-[0.16em]">Order #{id} could not be located in the archive.</p>
+          <Link to="/orders" className="mt-6 inline-block">
+            <Button variant="outline">Return to Archives</Button>
+          </Link>
         </div>
       </BuyerLayout>
     );
@@ -234,14 +242,11 @@ export function OrderDetailPage() {
     switch (order.status) {
       case 'confirmed':
       case 'delivered':
-      case 'paid':
         return 'success';
       case 'cancelled':
-      case 'failed':
-        return 'danger';
+        return 'error';
       case 'processing':
       case 'shipped':
-      case 'pending':
         return 'warning';
       default:
         return 'default';
@@ -250,12 +255,11 @@ export function OrderDetailPage() {
 
   const paymentBadgeVariant = (() => {
     switch (order.paymentStatus) {
-      case 'paid':
+      case 'success':
         return 'success';
       case 'failed':
-        return 'danger';
+        return 'error';
       case 'pending':
-      case 'refunded':
         return 'warning';
       default:
         return 'default';
@@ -265,69 +269,76 @@ export function OrderDetailPage() {
   return (
     <BuyerLayout>
       {isConfirmed && (
-        <div className="mb-8 rounded-xl bg-emerald-50 p-4 text-center dark:bg-emerald-900/20 animate-fade-in">
-          <Check className="mx-auto mb-2 h-6 w-6 text-success" />
-          <p className="font-semibold text-success">Payment Successful — Order Confirmed</p>
+        <div className="mb-8 rounded-[4px] border border-emerald-500/30 bg-emerald-950/20 p-4 text-center animate-fade-in">
+          <Check className="mx-auto mb-1.5 h-5 w-5 text-emerald-400" />
+          <p className="font-mono text-xs uppercase tracking-widest text-emerald-400">Autonomous Settlement Completed · Acquisition Confirmed</p>
         </div>
       )}
 
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap pb-6 border-b border-white/[0.06]">
         <div>
-          <h1 className="text-2xl font-bold">Order #{order.orderNumber}</h1>
-          <p className="text-muted dark:text-muted-light">
-            {order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">Acquisition Dossier</span>
+          <h1 className="font-editorial text-3xl md:text-4xl italic text-[#E2E2E2] font-normal tracking-wide mt-1">
+            Order #{order.orderNumber}
+          </h1>
+          <p className="text-xs text-[#E2E2E2]/50 uppercase tracking-widest mt-1">
+            Recorded {order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
-        <Badge variant={statusBadgeVariant} className="capitalize">{order.status}</Badge>
+        <Badge variant={statusBadgeVariant} className="capitalize text-xs px-3 py-1">{order.status}</Badge>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <h3 className="mb-4 font-semibold">Order Items</h3>
-            <div className="flex gap-4">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E2E2E2] mb-4 pb-3 border-b border-white/[0.06]">
+              Acquired Pieces
+            </h3>
+            <div className="flex gap-4 items-center">
               {order.productImage ? (
-                <img src={order.productImage} alt={order.productName} className="h-24 w-20 rounded-lg object-cover" />
+                <img src={order.productImage} alt={order.productName} className="h-28 w-22 rounded-[2px] object-cover border border-white/10" />
               ) : (
-                <div className="h-24 w-20 rounded-lg bg-border/50 dark:bg-border-dark/50 flex items-center justify-center">
-                  <Package className="h-8 w-8 text-muted" />
+                <div className="h-28 w-22 rounded-[2px] bg-[#141417] border border-white/10 flex items-center justify-center">
+                  <Package className="h-8 w-8 text-[#E2E2E2]/40" />
                 </div>
               )}
-              <div>
-                <p className="font-medium">{order.productName || 'Order item'}</p>
-                <p className="text-sm text-muted">
-                  {order.size || '—'} · {order.color || '—'} × {order.quantity}
+              <div className="space-y-1">
+                <p className="text-sm font-semibold uppercase tracking-wider text-[#E2E2E2]">{order.productName || 'Garment Piece'}</p>
+                <p className="text-xs text-[#E2E2E2]/60 uppercase tracking-widest">
+                  Size {order.size || '—'} · Color {order.color || '—'} · Qty {order.quantity}
                 </p>
-                <p className="mt-1 font-semibold">{formatPrice(order.amount)}</p>
-                {order.aiMatchScore && <Badge variant="ai" className="mt-2">{order.aiMatchScore}% AI Match</Badge>}
+                <p className="font-mono text-base font-bold text-[#D4AF37] pt-1">{formatPrice(order.amount)}</p>
+                {order.aiMatchScore && <Badge variant="ai" className="mt-2">{order.aiMatchScore}% AI Style Match</Badge>}
               </div>
             </div>
           </Card>
 
           <Card>
-            <h3 className="mb-4 font-semibold">Order Timeline</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E2E2E2] mb-6 pb-3 border-b border-white/[0.06]">
+              Fulfillment Status & Telemetry
+            </h3>
             <div className="space-y-4">
               {(order.timeline || []).length === 0 ? (
-                <p className="text-sm text-muted">Timeline not available.</p>
+                <p className="text-xs text-[#E2E2E2]/50 uppercase tracking-widest">Telemetry timeline initializing...</p>
               ) : (
                 (order.timeline || []).map((event, i) => (
                   <div key={event.id || i} className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`h-3 w-3 rounded-full ${
+                      <div className={`h-2.5 w-2.5 rounded-full ${
                         event.status === 'completed'
-                          ? 'bg-success'
+                          ? 'bg-[#D4AF37]'
                           : event.status === 'current'
-                          ? 'bg-violet-ai animate-pulse-soft'
-                          : 'bg-border dark:bg-border-dark'
+                          ? 'bg-[#D4AF37] animate-pulse ring-4 ring-[#D4AF37]/20'
+                          : 'bg-white/20'
                       }`} />
                       {i < (order.timeline || []).length - 1 && (
-                        <div className="w-0.5 flex-1 bg-border dark:bg-border-dark" />
+                        <div className="w-px flex-1 bg-white/10 my-1" />
                       )}
                     </div>
                     <div className="pb-4">
-                      <p className={`font-medium ${event.status === 'pending' ? 'text-muted' : ''}`}>{event.label}</p>
+                      <p className={`text-xs uppercase tracking-wider font-medium ${event.status === 'pending' ? 'text-[#E2E2E2]/40' : 'text-[#E2E2E2]'}`}>{event.label}</p>
                       {event.status !== 'pending' && event.timestamp && (
-                        <p className="text-xs text-muted dark:text-muted-light">
+                        <p className="text-[10px] font-mono text-[#D4AF37]/70 uppercase tracking-widest mt-0.5">
                           {new Date(event.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       )}
@@ -341,30 +352,36 @@ export function OrderDetailPage() {
 
         <div className="space-y-6">
           <Card>
-            <h3 className="mb-4 font-semibold">Payment</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted">Status</span>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E2E2E2] mb-4 pb-3 border-b border-white/[0.06]">
+              Settlement Protocol
+            </h3>
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between items-center uppercase tracking-wider">
+                <span className="text-[#E2E2E2]/60">Status</span>
                 <Badge variant={paymentBadgeVariant} className="capitalize">{order.paymentStatus}</Badge>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Amount</span>
-                <span className="font-semibold">{formatPrice(order.amount)}</span>
+              <div className="flex justify-between items-center uppercase tracking-wider">
+                <span className="text-[#E2E2E2]/60">Amount</span>
+                <span className="font-mono font-bold text-[#D4AF37]">{formatPrice(order.amount)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Method</span>
-                <span>Razorpay</span>
+              <div className="flex justify-between items-center uppercase tracking-wider">
+                <span className="text-[#E2E2E2]/60">Gateway</span>
+                <span className="text-[#E2E2E2]">Razorpay Secure</span>
               </div>
             </div>
-            <Badge variant="warning" className="mt-4">Razorpay Test Mode</Badge>
+            <div className="mt-4 pt-3 border-t border-white/[0.06]">
+              <Badge variant="warning">Razorpay Test Mode</Badge>
+            </div>
           </Card>
 
           <Card>
-            <h3 className="mb-4 font-semibold">Shipping</h3>
-            <p className="text-sm font-medium">{order.customerName || 'Customer'}</p>
-            <p className="text-sm text-muted dark:text-muted-light">{order.shippingAddress || 'Address not provided'}</p>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E2E2E2] mb-4 pb-3 border-b border-white/[0.06]">
+              Private Dispatch Address
+            </h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#E2E2E2]">{order.customerName || 'Client'}</p>
+            <p className="text-xs text-[#E2E2E2]/60 mt-1 leading-relaxed">{order.shippingAddress || 'Destination unlisted'}</p>
             {order.customerEmail && (
-              <p className="text-xs text-muted mt-2">{order.customerEmail}</p>
+              <p className="text-[11px] font-mono text-[#D4AF37] mt-2">{order.customerEmail}</p>
             )}
           </Card>
         </div>
@@ -374,7 +391,7 @@ export function OrderDetailPage() {
 }
 
 export function PreferencesPage() {
-  const { preferences, preferencesLoading, preferencesError, updatePreferences, loadPreferences, showToast } = useApp();
+  const { preferences, preferencesLoading, preferencesError, updatePreferences, showToast } = useApp();
   const [saving, setSaving] = useState(false);
   const [budgetValue, setBudgetValue] = useState<string>('');
   const [sizesValue, setSizesValue] = useState<string>('');
@@ -419,7 +436,7 @@ export function PreferencesPage() {
 
       if (ok) {
         setDirty(false);
-        showToast('Preferences saved', 'success');
+        showToast('Autonomous preferences committed', 'success');
       }
     } finally {
       setSaving(false);
@@ -429,11 +446,9 @@ export function PreferencesPage() {
   if (preferencesLoading && !preferences) {
     return (
       <BuyerLayout>
-        <h1 className="mb-2 text-2xl font-bold">Buyer Preferences</h1>
-        <p className="mb-8 text-muted dark:text-muted-light">Configure settings for your AI Buyer agent</p>
-        <div className="flex flex-col items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-ai" />
-          <p className="mt-4 text-muted dark:text-muted-light">Loading preferences...</p>
+        <div className="flex flex-col items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+          <p className="mt-4 text-xs font-mono uppercase tracking-widest text-[#E2E2E2]/60">Loading Client Profile...</p>
         </div>
       </BuyerLayout>
     );
@@ -443,12 +458,13 @@ export function PreferencesPage() {
     <BuyerLayout>
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="mb-2 text-2xl font-bold">Buyer Preferences</h1>
-          <p className="text-muted dark:text-muted-light">Configure settings for your AI Buyer agent</p>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">Concierge Parameters</span>
+          <h1 className="font-editorial text-3xl md:text-4xl italic text-[#E2E2E2] font-normal tracking-wide mt-1">Autonomous Preferences</h1>
+          <p className="text-xs text-[#E2E2E2]/60 mt-1 uppercase tracking-[0.14em]">Configure sizing, colorways, and purchase policy limits</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           {dirty && (
-            <span className="self-center text-xs text-amber-600 dark:text-amber-400">Unsaved changes</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#D4AF37]">Unsaved changes</span>
           )}
           <Button
             variant="ai"
@@ -457,13 +473,13 @@ export function PreferencesPage() {
           >
             {saving ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0B0B0C]" />
                 Saving...
               </>
             ) : (
               <>
-                <Save className="h-4 w-4" />
-                Save
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                Commit Preferences
               </>
             )}
           </Button>
@@ -471,92 +487,96 @@ export function PreferencesPage() {
       </div>
 
       {preferencesError && (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+        <div className="mb-6 rounded-[4px] border border-[#D4AF37]/30 bg-[#141417] p-4 text-xs text-[#E2E2E2]/80">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-              Could not load saved preferences. Showing defaults — save to persist to your account.
-            </p>
+            <AlertCircle className="h-4 w-4 text-[#D4AF37]" />
+            <p>Could not retrieve remote preferences. Local default parameters active.</p>
           </div>
         </div>
       )}
 
       <div className="max-w-2xl space-y-6">
         <Card>
-          <h3 className="mb-4 font-semibold">Budget & Shopping</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E2E2E2] mb-4 pb-3 border-b border-white/[0.06]">
+            Styling & Budget Guardrails
+          </h3>
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium">Budget Limit (₹)</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E2E2E2]/70">Cap per Autonomous Purchase (₹)</label>
               <input
                 type="number"
                 min="0"
                 value={budgetValue}
                 onChange={(e) => { setBudgetValue(e.target.value); markDirty(); }}
-                className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 dark:border-border-dark dark:bg-surface-dark disabled:opacity-60"
+                className="w-full rounded-[4px] border border-white/10 bg-[#131314] px-4 py-3 text-sm text-[#E2E2E2] focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/30 font-mono disabled:opacity-60"
                 disabled={saving}
               />
-              <p className="mt-1 text-xs text-muted dark:text-muted-light">
-                Maximum amount the AI Buyer can spend per purchase.
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-[#E2E2E2]/50">
+                The AI Stylist Concierge cannot authorize transactions exceeding this limit without manual override.
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Preferred Sizes</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E2E2E2]/70">Preferred Garment Sizes</label>
               <input
                 value={sizesValue}
                 onChange={(e) => { setSizesValue(e.target.value); markDirty(); }}
-                className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 dark:border-border-dark dark:bg-surface-dark disabled:opacity-60"
-                placeholder="M, L, XL"
+                className="w-full rounded-[4px] border border-white/10 bg-[#131314] px-4 py-3 text-sm text-[#E2E2E2] focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/30 disabled:opacity-60"
+                placeholder="M, L, XL, 42, 44"
                 disabled={saving}
               />
-              <p className="mt-1 text-xs text-muted dark:text-muted-light">Comma-separated sizes you typically wear.</p>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-[#E2E2E2]/50">Comma-separated luxury standard sizing.</p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Preferred Colors</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E2E2E2]/70">Favored Palette & Tones</label>
               <input
                 value={colorsValue}
                 onChange={(e) => { setColorsValue(e.target.value); markDirty(); }}
-                className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 dark:border-border-dark dark:bg-surface-dark disabled:opacity-60"
-                placeholder="Wine, Burgundy, Black"
+                className="w-full rounded-[4px] border border-white/10 bg-[#131314] px-4 py-3 text-sm text-[#E2E2E2] focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/30 disabled:opacity-60"
+                placeholder="Obsidian, Bone, Champagne, Midnight"
                 disabled={saving}
               />
-              <p className="mt-1 text-xs text-muted dark:text-muted-light">Comma-separated color preferences.</p>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-[#E2E2E2]/50">Comma-separated colorway affinities.</p>
             </div>
           </div>
         </Card>
 
         <Card>
-          <h3 className="mb-4 font-semibold">Purchase Policy</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E2E2E2] mb-4 pb-3 border-b border-white/[0.06]">
+            Autonomous Purchase Authorization
+          </h3>
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={autoApprove}
               onChange={(e) => { setAutoApprove(e.target.checked); markDirty(); }}
-              className="mt-0.5 h-4 w-4 rounded border-border text-violet-ai focus:ring-violet-ai"
+              className="mt-1 h-4 w-4 rounded-[2px] border-white/20 bg-[#131314] text-[#D4AF37] focus:ring-[#D4AF37]"
               disabled={saving}
             />
             <div>
-              <p className="text-sm font-medium">Auto-approve purchases under budget limit</p>
-              <p className="text-xs text-muted dark:text-muted-light mt-0.5">
-                When enabled, AI Buyer can finalize purchases within budget without manual approval.
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#E2E2E2]">Auto-Clear Transactions Within Budget</p>
+              <p className="text-[11px] text-[#E2E2E2]/60 mt-0.5 leading-relaxed">
+                When enabled, the AI Concierge can complete full checkout for pieces matching your style appraisal if the price sits within the specified cap.
               </p>
             </div>
           </label>
         </Card>
 
         <Card>
-          <h3 className="mb-4 font-semibold">AI Personalization</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E2E2E2] mb-4 pb-3 border-b border-white/[0.06]">
+            Neural Style Appraisal Engine
+          </h3>
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={aiPersonalization}
               onChange={(e) => { setAiPersonalization(e.target.checked); markDirty(); }}
-              className="mt-0.5 h-4 w-4 rounded border-border text-violet-ai focus:ring-violet-ai"
+              className="mt-1 h-4 w-4 rounded-[2px] border-white/20 bg-[#131314] text-[#D4AF37] focus:ring-[#D4AF37]"
               disabled={saving}
             />
             <div>
-              <p className="text-sm font-medium">Enable AI personalization based on preferences</p>
-              <p className="text-xs text-muted dark:text-muted-light mt-0.5">
-                Tailor recommendations and match scores to your saved sizes, colors, and style.
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#E2E2E2]">Enable Neural Personalization</p>
+              <p className="text-[11px] text-[#E2E2E2]/60 mt-0.5 leading-relaxed">
+                Computes real-time match percentages, colorway harmonies, and personalized silhouette recommendations based on your archival taste graph.
               </p>
             </div>
           </label>

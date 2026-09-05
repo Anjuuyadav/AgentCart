@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Bot, Sparkles, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Send, Sparkles, Check, Loader2, AlertCircle, Compass, ArrowRight } from 'lucide-react';
 import { BuyerLayout } from '../../components/layout/BuyerLayout';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -15,34 +15,39 @@ import { getUserFriendlyMessage } from '../../services/apiClient';
 
 function RequirementsDisplay({ requirements }: { requirements: BuyerRequirements }) {
   return (
-    <div className="rounded-xl border border-violet-ai/20 bg-violet-ai-muted/30 p-4 dark:bg-violet-ai/10">
-      <div className="mb-3 flex items-center gap-2">
-        <Check className="h-4 w-4 text-success" />
-        <span className="text-sm font-semibold text-success">Requirement understood</span>
+    <div className="relative overflow-hidden rounded-[4px] border border-[rgba(212,175,55,0.35)] bg-gradient-to-br from-[#1C1B1C] to-[#131314] p-4 shadow-[0_0_25px_-5px_rgba(212,175,55,0.15)]">
+      <div className="mb-3 flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] pb-2.5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+          <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+            Concierge Brief Synthesized
+          </span>
+        </div>
+        <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-400">Validated</span>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {requirements.occasion && (
-          <div>
-            <p className="text-xs text-muted dark:text-muted-light">Occasion</p>
-            <p className="font-medium">{requirements.occasion}</p>
+          <div className="rounded-[2px] bg-[#0E0E0F]/80 p-2.5 border border-[rgba(255,255,255,0.04)]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#737373]">Occasion</p>
+            <p className="mt-0.5 font-serif text-xs text-[#E5E2E3] truncate">{requirements.occasion}</p>
           </div>
         )}
         {requirements.budget && (
-          <div>
-            <p className="text-xs text-muted dark:text-muted-light">Budget</p>
-            <p className="font-medium">₹{requirements.budget.toLocaleString('en-IN')}</p>
+          <div className="rounded-[2px] bg-[#0E0E0F]/80 p-2.5 border border-[rgba(255,255,255,0.04)]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#737373]">Budget Cap</p>
+            <p className="mt-0.5 font-serif text-xs text-[#D4AF37] font-semibold">₹{requirements.budget.toLocaleString('en-IN')}</p>
           </div>
         )}
         {requirements.size && (
-          <div>
-            <p className="text-xs text-muted dark:text-muted-light">Size</p>
-            <p className="font-medium">{requirements.size}</p>
+          <div className="rounded-[2px] bg-[#0E0E0F]/80 p-2.5 border border-[rgba(255,255,255,0.04)]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#737373]">Size Standard</p>
+            <p className="mt-0.5 font-serif text-xs text-[#E5E2E3] uppercase">{requirements.size}</p>
           </div>
         )}
         {requirements.color && (
-          <div>
-            <p className="text-xs text-muted dark:text-muted-light">Color</p>
-            <p className="font-medium">{requirements.color}</p>
+          <div className="rounded-[2px] bg-[#0E0E0F]/80 p-2.5 border border-[rgba(255,255,255,0.04)]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#737373]">Color Palette</p>
+            <p className="mt-0.5 font-serif text-xs text-[#E5E2E3] capitalize">{requirements.color}</p>
           </div>
         )}
       </div>
@@ -61,34 +66,44 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
   if (message.type === 'status') {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted dark:text-muted-light animate-pulse-soft">
-        <Loader2 className="h-4 w-4 animate-spin text-violet-ai" />
-        {message.content}
+      <div className="flex items-center gap-2.5 py-1 text-xs text-[#D4AF37] animate-pulse-soft">
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D4AF37]" />
+        <span className="font-sans uppercase tracking-[0.14em] text-[11px]">{message.content}</span>
       </div>
     );
   }
 
   if (message.type === 'recommendations') {
     return (
-      <div className="animate-slide-up">
-        <div className="mb-4 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-violet-ai" />
-          <span className="font-medium text-violet-ai">{message.content}</span>
+      <div className="animate-slide-up my-1 rounded-[4px] border border-[rgba(212,175,55,0.25)] bg-[#17171B]/90 p-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+          <span className="font-serif text-sm text-[#E5E2E3]">{message.content}</span>
         </div>
       </div>
     );
   }
 
+  const isUser = message.role === 'user';
+
   return (
-    <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}>
-      <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === 'user' ? 'bg-charcoal text-white dark:bg-white dark:text-charcoal' : 'border border-border bg-surface dark:border-border-dark dark:bg-surface-dark'}`}>
-        {message.role === 'assistant' && (
-          <div className="mb-1 flex items-center gap-1.5">
-            <Bot className="h-3.5 w-3.5 text-violet-ai" />
-            <span className="text-xs font-medium text-violet-ai">AI Buyer</span>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}>
+      <div
+        className={`max-w-[85%] rounded-[4px] p-4 text-xs sm:text-sm leading-relaxed ${
+          isUser
+            ? 'border border-[rgba(212,175,55,0.4)] bg-[#1C1B1C] text-[#E5E2E3] shadow-[0_4px_20px_rgba(0,0,0,0.5)]'
+            : 'border border-[rgba(255,255,255,0.08)] bg-[#131314] text-[#E5E2E3]'
+        }`}
+      >
+        {!isUser && (
+          <div className="mb-2 flex items-center gap-1.5 border-b border-[rgba(255,255,255,0.06)] pb-1.5">
+            <Sparkles className="h-3 w-3 text-[#D4AF37]" />
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-[#D4AF37]">
+              Haute Concierge
+            </span>
           </div>
         )}
-        <p className="text-sm">{message.content}</p>
+        <p className="font-sans text-xs sm:text-sm leading-relaxed text-[#E5E2E3]/90">{message.content}</p>
       </div>
     </div>
   );
@@ -315,140 +330,199 @@ export function AIBuyerPage() {
 
   return (
     <BuyerLayout>
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-ai/10">
-            <Bot className="h-5 w-5 text-violet-ai" />
+      {/* Header */}
+      <div className="mb-8 flex flex-col justify-between gap-3 border-b border-[rgba(255,255,255,0.08)] pb-6 sm:flex-row sm:items-end">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.24em] text-[#D4AF37]">
+              TELEPATHIC STYLING SALON
+            </span>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">AI Buyer</h1>
-            <p className="text-sm text-muted dark:text-muted-light">Describe what you're looking for in natural language</p>
-          </div>
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#E5E2E3]">
+            The AI Stylist Concierge
+          </h1>
+          <p className="mt-1 font-sans text-xs text-[#9E9E9E]">
+            Articulate aesthetic preferences, formal dress codes, budget boundaries, or specific capsule silhouettes.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="ai">Agent Node 01 · Active</Badge>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <Card padding="none" className="flex h-[600px] flex-col overflow-hidden">
+      <div className="grid gap-8 lg:grid-cols-12">
+        {/* Left 7 Columns: Dialogue Canvas */}
+        <div className="lg:col-span-7 flex flex-col">
+          <div className="relative flex h-[640px] flex-col overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#131314]/90 shadow-[0_15px_40px_rgba(0,0,0,0.8)] backdrop-blur-md">
+            {/* Ambient gold glow */}
+            <div className="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-[#D4AF37]/[0.05] blur-[80px]" />
+
+            {/* Message Stream */}
             <div className="flex-1 space-y-4 overflow-y-auto p-6">
               {localMessages.length === 0 && (
-                <div className="flex h-full flex-col items-center justify-center text-center">
-                  <Sparkles className="mb-4 h-10 w-10 text-violet-ai/50" />
-                  <p className="mb-2 font-medium">How can I help you shop today?</p>
-                  <p className="mb-6 max-w-sm text-sm text-muted dark:text-muted-light">
-                    Try: "I need a wine-colored wedding dress under ₹5,000, size M."
-                  </p>
-                  <button
-                    onClick={() => setInput(DEMO_QUERY)}
-                    className="rounded-lg border border-violet-ai/30 px-4 py-2 text-sm text-violet-ai hover:bg-violet-ai/5"
-                  >
-                    Use demo query
-                  </button>
+                <div className="flex h-full flex-col items-center justify-center text-center p-6 space-y-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-[4px] border border-[rgba(212,175,55,0.35)] bg-[#1A1A1E] text-[#D4AF37] shadow-[0_0_20px_-5px_rgba(212,175,55,0.3)]">
+                    <Sparkles className="h-6 w-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-serif text-xl font-normal text-[#E5E2E3]">How may the concierge tailor your wardrobe?</h3>
+                    <p className="font-sans text-xs text-[#9E9E9E] max-w-sm mx-auto">
+                      Inquire with complex criteria. Sizing, seasonal fabrics, color palettes, or target acquisition caps.
+                    </p>
+                  </div>
+
+                  {/* Refined Prompt Chips */}
+                  <div className="pt-2 flex flex-col gap-2 w-full max-w-md">
+                    <button
+                      onClick={() => setInput(DEMO_QUERY)}
+                      className="group flex items-center justify-between rounded-[3px] border border-[rgba(212,175,55,0.3)] bg-[#1A1A1E] px-4 py-2.5 text-left text-xs text-[#E5E2E3] transition-all hover:border-[#D4AF37] hover:bg-[#201F20] cursor-pointer shadow-[0_0_15px_-4px_rgba(212,175,55,0.15)]"
+                    >
+                      <span className="truncate">"Wine-colored satin dress under ₹5,000, size M"</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-[#D4AF37] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                    </button>
+
+                    <button
+                      onClick={() => setInput('I need an ivory bridal lace gown under ₹6,000 in size S')}
+                      className="group flex items-center justify-between rounded-[3px] border border-[rgba(255,255,255,0.08)] bg-[#141417] px-4 py-2 text-left text-xs text-[#9E9E9E] transition-all hover:border-[rgba(212,175,55,0.3)] hover:text-[#E5E2E3] cursor-pointer"
+                    >
+                      <span className="truncate">"Ivory bridal lace gown under ₹6,000, size S"</span>
+                      <ArrowRight className="h-3 w-3 opacity-40 group-hover:opacity-100" />
+                    </button>
+
+                    <button
+                      onClick={() => setInput('Show me statement gold jewelry and evening accessories under ₹2,000')}
+                      className="group flex items-center justify-between rounded-[3px] border border-[rgba(255,255,255,0.08)] bg-[#141417] px-4 py-2 text-left text-xs text-[#9E9E9E] transition-all hover:border-[rgba(212,175,55,0.3)] hover:text-[#E5E2E3] cursor-pointer"
+                    >
+                      <span className="truncate">"Gold jewelry and evening accessories under ₹2,000"</span>
+                      <ArrowRight className="h-3 w-3 opacity-40 group-hover:opacity-100" />
+                    </button>
+                  </div>
                 </div>
               )}
+
               {localMessages.map((msg) => (
                 <MessageBubble key={msg.id} message={msg} />
               ))}
-              {processing && <AIStatus status="thinking" label="AI Buyer is analyzing your request..." />}
+
+              {processing && <AIStatus status="thinking" label="Concierge evaluating atelier inventory..." />}
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSubmit} className="border-t border-border p-4 dark:border-border-dark">
-              <div className="flex gap-2">
+            {/* Luxury Prompt Bar */}
+            <form onSubmit={handleSubmit} className="border-t border-[rgba(255,255,255,0.08)] bg-[#0E0E0F] p-4">
+              <div className="flex gap-2.5">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Describe what you're looking for..."
-                  className="flex-1 rounded-xl border border-border bg-ivory px-4 py-3 text-sm focus:border-violet-ai focus:outline-none focus:ring-2 focus:ring-violet-ai/20 dark:border-border-dark dark:bg-charcoal"
+                  placeholder="Inquire with your styling criteria..."
+                  className="flex-1 rounded-[3px] border border-[rgba(255,255,255,0.08)] bg-[#141417] px-4 py-3 text-xs tracking-wide text-[#E5E2E3] placeholder-[#737373] transition-colors focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/35"
                   disabled={processing}
                 />
-                <Button type="submit" variant="ai" disabled={processing || !input.trim()}>
-                  <Send className="h-4 w-4" />
+                <Button type="submit" variant="primary" disabled={processing || !input.trim()} size="md">
+                  <Send className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </form>
-          </Card>
+          </div>
         </div>
 
-        <div className="lg:col-span-2">
+        {/* Right 5 Columns: Concierge Dossier & Curated Garments */}
+        <div className="lg:col-span-5 space-y-6">
           {localRequirements && (
-            <Card className="mb-6">
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted dark:text-muted-light">Extracted Requirements</h3>
+            <div>
               <RequirementsDisplay requirements={localRequirements} />
-            </Card>
+            </div>
           )}
 
           {showRecommendations && (
-            <div className="animate-fade-in">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-semibold">Recommendations</h3>
-                <AIBadge>{localProductIds.length} matches</AIBadge>
+            <div className="animate-fade-in space-y-4">
+              <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] pb-2">
+                <h3 className="font-serif text-lg font-normal text-[#E5E2E3]">Curated Selections</h3>
+                <AIBadge>{localProductIds.length} Couture Matches</AIBadge>
               </div>
+
               {recommendedList.length === 0 ? (
                 <Card>
-                  <p className="text-sm text-muted">No recommendations yet.</p>
+                  <p className="text-xs text-[#9E9E9E]">No specific garments cataloged for this criteria.</p>
                 </Card>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   {recommendedList.map(({ id, state }) => {
                     if (!state) return null;
                     if (state.loading) {
                       return (
-                        <Card key={id} padding="sm" className="overflow-hidden">
-                          <div className="flex gap-4 animate-pulse">
-                            <div className="h-24 w-20 rounded-lg bg-border/50 dark:bg-border-dark/50" />
+                        <div key={id} className="rounded-[4px] border border-[rgba(255,255,255,0.06)] bg-[#131314] p-3 animate-pulse">
+                          <div className="flex gap-3">
+                            <div className="h-24 w-18 rounded-[2px] bg-[#1C1B1C]" />
                             <div className="flex-1 space-y-2 py-1">
-                              <div className="h-4 w-3/4 rounded bg-border/60 dark:bg-border-dark/60" />
-                              <div className="h-5 w-1/3 rounded bg-border/60 dark:bg-border-dark/60" />
-                              <div className="h-3 w-1/2 rounded bg-border/40 dark:bg-border-dark/40" />
+                              <div className="h-3.5 w-3/4 rounded bg-[#1C1B1C]" />
+                              <div className="h-4 w-1/3 rounded bg-[#1C1B1C]" />
+                              <div className="h-3 w-1/2 rounded bg-[#1C1B1C]" />
                             </div>
                           </div>
-                        </Card>
+                        </div>
                       );
                     }
                     if (state.error || !state.product) {
                       return (
-                        <Card key={id} padding="sm" className="overflow-hidden">
-                          <div className="flex items-start gap-3">
-                            <AlertCircle className="mt-0.5 h-4 w-4 text-muted shrink-0" />
-                            <div>
-                              <p className="text-sm font-medium">Product unavailable</p>
-                              <p className="text-xs text-muted">
-                                {state.error || 'This recommendation could not be loaded.'}
-                              </p>
-                            </div>
+                        <div key={id} className="rounded-[4px] border border-rose-500/30 bg-rose-950/20 p-3 flex items-start gap-2.5">
+                          <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs font-semibold text-rose-300">Garment Unavailable</p>
+                            <p className="text-[11px] text-rose-400/80">{state.error || 'Unable to load piece.'}</p>
                           </div>
-                        </Card>
+                        </div>
                       );
                     }
                     const product = state.product;
                     return (
-                      <Card key={id} hover padding="sm" className="overflow-hidden">
+                      <div
+                        key={id}
+                        className="group relative overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#131314] p-3.5 transition-all duration-300 hover:border-[rgba(212,175,55,0.4)] hover:shadow-[0_8px_25px_-8px_rgba(212,175,55,0.15)]"
+                      >
                         <div className="flex gap-4">
-                          <Link to={`/product/${product.id}`} className="shrink-0">
+                          <Link to={`/product/${product.id}`} className="relative h-28 w-20 shrink-0 overflow-hidden rounded-[2px] bg-[#0E0E0F]">
                             <img
                               src={product.image}
                               alt={product.name}
-                              className="h-24 w-20 rounded-lg object-cover"
+                              className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
                               }}
                             />
                           </Link>
-                          <div className="flex-1 min-w-0">
-                            <div className="mb-1 flex items-center gap-2">
-                              {state.aiMatchScore && <Badge variant="ai">{state.aiMatchScore}% match</Badge>}
+                          <div className="flex flex-1 flex-col justify-between min-w-0">
+                            <div>
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                {state.aiMatchScore ? (
+                                  <Badge variant="ai">Match {state.aiMatchScore}%</Badge>
+                                ) : (
+                                  <span />
+                                )}
+                                <span className="text-[10px] uppercase tracking-wider text-[#737373]">
+                                  {product.category.replace(/-/g, ' ')}
+                                </span>
+                              </div>
+
+                              <Link to={`/product/${product.id}`}>
+                                <h4 className="font-serif text-sm font-medium text-[#E5E2E3] truncate transition-colors group-hover:text-[#D4AF37]">
+                                  {product.name}
+                                </h4>
+                              </Link>
+
+                              <p className="font-sans text-sm font-semibold text-[#E2E2E2] mt-0.5">
+                                {formatPrice(product.price)}
+                              </p>
                             </div>
-                            <Link to={`/product/${product.id}`}>
-                              <h4 className="font-medium hover:text-violet-ai truncate">{product.name}</h4>
-                            </Link>
-                            <p className="text-lg font-semibold">{formatPrice(product.price)}</p>
+
                             {state.aiReasons && state.aiReasons.length > 0 && (
-                              <ul className="mt-2 space-y-0.5">
+                              <ul className="space-y-0.5 pt-1.5 border-t border-[rgba(255,255,255,0.04)]">
                                 {state.aiReasons.slice(0, 2).map((r, idx) => (
-                                  <li key={idx} className="flex items-center gap-1 text-xs text-muted dark:text-muted-light">
-                                    <Check className="h-3 w-3 text-success shrink-0" />
+                                  <li key={idx} className="flex items-center gap-1.5 text-[11px] text-[#9E9E9E]">
+                                    <Check className="h-3 w-3 text-[#D4AF37] shrink-0" />
                                     <span className="truncate">{r}</span>
                                   </li>
                                 ))}
@@ -456,7 +530,7 @@ export function AIBuyerPage() {
                             )}
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     );
                   })}
                 </div>
@@ -465,15 +539,19 @@ export function AIBuyerPage() {
           )}
 
           {!showRecommendations && !localRequirements && (
-            <Card>
-              <h3 className="mb-2 font-semibold">Purchase Policy</h3>
-              <p className="text-sm text-muted dark:text-muted-light">
-                Your AI Buyer follows your purchase policies including budget limits, size preferences, and authorization rules.
+            <div className="rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#131314] p-6 space-y-4">
+              <div className="flex items-center gap-2 text-[#D4AF37]">
+                <Compass className="h-4 w-4" />
+                <h3 className="font-sans text-xs font-bold uppercase tracking-[0.2em]">Purchase Policy Guardrails</h3>
+              </div>
+              <p className="font-sans text-xs leading-relaxed text-[#9E9E9E]">
+                The AI Concierge strictly adheres to your configured purchase policies—guaranteeing budget caps, auto-approval thresholds, sizing preferences, and verified merchant authorization rules.
               </p>
-              <Link to="/buyer/preferences" className="mt-3 inline-block text-sm font-medium text-violet-ai hover:underline">
-                Configure preferences →
+              <Link to="/buyer/preferences" className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#D4AF37] hover:underline">
+                <span>Configure Policy Preferences</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
-            </Card>
+            </div>
           )}
         </div>
       </div>

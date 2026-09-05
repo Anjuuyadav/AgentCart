@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Trash2, Plus, Minus, ShoppingBag, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Sparkles, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import { BuyerLayout } from '../../components/layout/BuyerLayout';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
 import { formatPrice, CROSS_SELL_PRODUCT_ID } from '../../services';
 import { productService } from '../../services/productService';
 import { useApp } from '../../contexts/useApp';
@@ -60,9 +59,9 @@ export function CartPage() {
   if (!cartLoaded && cartLoading) {
     return (
       <BuyerLayout>
-        <div className="flex flex-col items-center justify-center py-32">
-          <Loader2 className="mb-4 h-10 w-10 animate-spin text-violet-ai" />
-          <p className="text-sm text-muted dark:text-muted-light">Loading your cart...</p>
+        <div className="flex flex-col items-center justify-center py-36">
+          <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#D4AF37]" />
+          <p className="font-serif text-sm italic text-[#9E9E9E]">Opening your private wardrobe bag...</p>
         </div>
       </BuyerLayout>
     );
@@ -71,15 +70,15 @@ export function CartPage() {
   if (cartError && cart.length === 0) {
     return (
       <BuyerLayout>
-        <div className="py-16 text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-error" />
-          <h2 className="text-xl font-semibold">Unable to load cart.</h2>
-          <p className="mt-2 text-sm text-muted dark:text-muted-light">{cartError}</p>
+        <div className="py-24 text-center rounded-[4px] border border-rose-500/30 bg-rose-950/20">
+          <AlertCircle className="mx-auto mb-4 h-8 w-8 text-rose-400" />
+          <h2 className="font-serif text-2xl font-normal text-rose-300">Bag Retrieval Interrupted</h2>
+          <p className="mt-2 text-xs text-rose-400/80">{cartError}</p>
           <button
             onClick={refreshCart}
-            className="mt-4 rounded-lg bg-violet-ai px-4 py-2 text-sm font-medium text-white hover:bg-violet-ai/90"
+            className="mt-6 rounded-[3px] bg-[#D4AF37] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#0B0B0C] hover:bg-[#E5C358] cursor-pointer"
           >
-            Retry
+            Retry Connection
           </button>
         </div>
       </BuyerLayout>
@@ -89,18 +88,20 @@ export function CartPage() {
   if (cart.length === 0) {
     return (
       <BuyerLayout>
-        <div className="py-16 text-center">
-          <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-muted" />
-          <h2 className="text-xl font-semibold">Your cart is empty</h2>
-          <p className="mt-2 text-muted dark:text-muted-light">
-            Start shopping or ask AI Buyer for recommendations
+        <div className="py-28 text-center rounded-[4px] border border-[rgba(255,255,255,0.06)] bg-[#131314]/50">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[4px] border border-[rgba(212,175,55,0.3)] bg-[#1A1A1E] text-[#D4AF37]">
+            <ShoppingBag className="h-6 w-6" />
+          </div>
+          <h2 className="font-serif text-3xl font-normal text-[#E5E2E3]">Your Shopping Bag is Empty</h2>
+          <p className="mt-2 max-w-sm mx-auto text-xs text-[#9E9E9E]">
+            No creations currently held. Consult the AI Concierge for tailored recommendations or explore our archival drops.
           </p>
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-8 flex justify-center gap-4">
             <Link to="/buyer">
-              <Button variant="ai">Try AI Buyer</Button>
+              <Button variant="primary" size="md">Consult AI Concierge</Button>
             </Link>
             <Link to="/products">
-              <Button variant="outline">Browse Products</Button>
+              <Button variant="secondary" size="md">Browse Collection</Button>
             </Link>
           </div>
         </div>
@@ -135,17 +136,30 @@ export function CartPage() {
       color: variant.color,
     });
     setCrossSellAdding(false);
-    if (ok) showToast('Added to cart', 'success');
+    if (ok) showToast('Accessory added to look', 'success');
   };
 
   return (
     <BuyerLayout>
-      <h1 className="mb-8 text-2xl font-bold">Your Cart</h1>
+      {/* Header */}
+      <div className="mb-10 flex flex-col justify-between gap-2 border-b border-[rgba(255,255,255,0.08)] pb-6 sm:flex-row sm:items-end">
+        <div>
+          <span className="font-sans text-[10px] font-bold uppercase tracking-[0.24em] text-[#D4AF37]">
+            RESERVED SELECTIONS
+          </span>
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#E5E2E3]">
+            Shopping Bag
+          </h1>
+        </div>
+        <span className="text-xs text-[#737373]">
+          {cart.length} distinct {cart.length === 1 ? 'creation' : 'creations'} reserved
+        </span>
+      </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid gap-12 lg:grid-cols-12">
+        {/* Left 8 Cols: Garments List */}
+        <div className="lg:col-span-8 space-y-4">
           {cart.map((item, idx) => {
-            const bi = backendCartItems[idx];
             const idForUpdate = item.productId;
             const itemUpdating = updating === idForUpdate;
             const price = getItemPrice(idx);
@@ -154,136 +168,179 @@ export function CartPage() {
             const lineTotal = price * item.quantity;
 
             return (
-              <Card key={`${item.productId}-${item.size}-${idx}`} padding="sm">
-                <div className="flex gap-4">
-                  <Link to={`/product/${item.productId}`} className="shrink-0">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={name || item.productId}
-                        className="h-28 w-24 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="h-28 w-24 rounded-lg bg-surface dark:bg-surface-dark flex items-center justify-center">
-                        <ShoppingBag className="h-8 w-8 text-muted" />
-                      </div>
-                    )}
-                  </Link>
-                  <div className="flex flex-1 flex-col min-w-0">
-                    <Link
-                      to={`/product/${item.productId}`}
-                      className="font-medium hover:text-violet-ai truncate"
-                    >
-                      {name || item.productId}
-                    </Link>
-                    <p className="text-sm text-muted dark:text-muted-light">
-                      {item.size} · {item.color}
-                    </p>
-                    <p className="mt-1 text-lg font-semibold">
-                      {price > 0 ? formatPrice(price) : formatPrice(0)}
-                      {lineTotal > 0 && item.quantity > 1 && (
-                        <span className="ml-2 text-sm font-normal text-muted">
-                          ({formatPrice(lineTotal)})
-                        </span>
-                      )}
-                    </p>
-                    <div className="mt-auto flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleQty(item.productId, -1)}
-                          disabled={itemUpdating || item.quantity <= 1}
-                          className="rounded-lg border p-1 hover:bg-charcoal/5 dark:hover:bg-white/5 disabled:opacity-50"
-                        >
-                          {itemUpdating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Minus className="h-4 w-4" />
-                          )}
-                        </button>
-                        <span className="w-8 text-center text-sm font-medium">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => handleQty(item.productId, +1)}
-                          disabled={itemUpdating}
-                          className="rounded-lg border p-1 hover:bg-charcoal/5 dark:hover:bg-white/5 disabled:opacity-50"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
+              <div
+                key={`${item.productId}-${item.size}-${idx}`}
+                className="group relative flex gap-5 rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#131314] p-4 transition-all hover:border-[rgba(212,175,55,0.35)]"
+              >
+                {/* 3:4 Thumbnail */}
+                <Link to={`/product/${item.productId}`} className="relative aspect-[3/4] h-32 shrink-0 overflow-hidden rounded-[2px] bg-[#0E0E0F]">
+                  {image ? (
+                    <img
+                      src={image}
+                      alt={name || item.productId}
+                      className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-[#17171B]">
+                      <ShoppingBag className="h-6 w-6 text-[#737373]" />
+                    </div>
+                  )}
+                </Link>
+
+                {/* Details */}
+                <div className="flex flex-1 flex-col justify-between min-w-0">
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <Link
+                        to={`/product/${item.productId}`}
+                        className="font-serif text-base font-normal text-[#E5E2E3] hover:text-[#D4AF37] transition-colors truncate"
+                      >
+                        {name || item.productId}
+                      </Link>
                       <button
                         onClick={() => handleRemove(item.productId)}
                         disabled={itemUpdating}
-                        className="text-muted hover:text-error disabled:opacity-50"
+                        className="text-[#737373] hover:text-rose-400 transition-colors p-1 cursor-pointer disabled:opacity-40"
+                        title="Remove piece"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
+
+                    <p className="mt-1 font-sans text-xs text-[#9E9E9E]">
+                      Size: <span className="text-[#E5E2E3] uppercase">{item.size}</span> · Palette: <span className="text-[#E5E2E3] capitalize">{item.color}</span>
+                    </p>
+
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="font-sans text-base font-semibold text-[#E2E2E2]">
+                        {price > 0 ? formatPrice(price) : formatPrice(0)}
+                      </span>
+                      {lineTotal > 0 && item.quantity > 1 && (
+                        <span className="text-xs text-[#737373]">
+                          ({formatPrice(lineTotal)} total)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quantity Minimalist Control */}
+                  <div className="flex items-center justify-between pt-3 border-t border-[rgba(255,255,255,0.06)]">
+                    <div className="flex items-center rounded-[3px] border border-[rgba(255,255,255,0.12)] bg-[#17171B]">
+                      <button
+                        onClick={() => handleQty(item.productId, -1)}
+                        disabled={itemUpdating || item.quantity <= 1}
+                        className="p-1.5 text-[#9E9E9E] hover:text-[#D4AF37] transition-colors cursor-pointer disabled:opacity-30"
+                        aria-label="Decrease quantity"
+                      >
+                        {itemUpdating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Minus className="h-3.5 w-3.5" />}
+                      </button>
+                      <span className="w-8 text-center font-sans text-xs font-semibold text-[#E5E2E3]">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => handleQty(item.productId, +1)}
+                        disabled={itemUpdating}
+                        className="p-1.5 text-[#9E9E9E] hover:text-[#D4AF37] transition-colors cursor-pointer disabled:opacity-30"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400">
+                      In Atelier Hold
+                    </span>
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
 
+          {/* COMPLETE THE LOOK — Real AI Cross-Sell */}
           {crossSell && !backendCartItems.some((i) => i.productId === crossSell.id) && (
-            <Card className="border-violet-ai/20 bg-violet-ai-muted/20 dark:bg-violet-ai/5">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-violet-ai" />
-                <span className="text-sm font-semibold text-violet-ai">AI Recommendation</span>
+            <div className="relative overflow-hidden rounded-[4px] border border-[rgba(212,175,55,0.35)] bg-gradient-to-r from-[#1A1A1E] via-[#141417] to-[#0E0E0F] p-5 shadow-[0_0_30px_-10px_rgba(212,175,55,0.15)]">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+                    Complete The Look · Stylist Recommendation
+                  </span>
+                </div>
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#9E9E9E]">Stylist Curated</span>
               </div>
-              <p className="mb-3 text-sm text-muted dark:text-muted-light">Complete the look with:</p>
+
               <div className="flex items-center gap-4">
                 <img
                   src={crossSell.image}
                   alt={crossSell.name}
-                  className="h-16 w-16 rounded-lg object-cover"
+                  className="h-18 w-14 rounded-[2px] object-cover"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{crossSell.name}</p>
-                  <p className="font-semibold">{formatPrice(crossSell.price)}</p>
+                  <h4 className="font-serif text-sm font-medium text-white truncate">{crossSell.name}</h4>
+                  <p className="font-sans text-xs font-semibold text-[#D4AF37] mt-0.5">{formatPrice(crossSell.price)}</p>
+                  <p className="text-[10px] text-[#9E9E9E] mt-0.5">High affinity accessory curated for your dress selection</p>
                 </div>
                 <Button
-                  variant="outline"
+                  variant="primary"
                   size="sm"
                   onClick={handleAddCrossSell}
                   disabled={crossSellAdding}
                 >
                   {crossSellAdding ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    'Add to Cart'
+                    'Add Piece'
                   )}
                 </Button>
               </div>
-            </Card>
+            </div>
           )}
         </div>
 
-        <div>
-          <Card>
-            <h3 className="mb-4 font-semibold">Order Summary</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted dark:text-muted-light">Subtotal</span>
-                <span>{formatPrice(cartSubtotal)}</span>
+        {/* Right 4 Cols: Order Summary */}
+        <div className="lg:col-span-4">
+          <div className="sticky top-24 rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#131314] p-6 shadow-[0_15px_40px_rgba(0,0,0,0.8)] space-y-6">
+            <h3 className="font-serif text-xl font-normal text-[#E5E2E3] border-b border-[rgba(255,255,255,0.08)] pb-4">
+              Acquisition Summary
+            </h3>
+
+            <div className="space-y-3 font-sans text-xs">
+              <div className="flex justify-between text-[#9E9E9E]">
+                <span>Garments Subtotal</span>
+                <span className="text-[#E5E2E3] font-medium">{formatPrice(cartSubtotal)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted dark:text-muted-light">Shipping</span>
-                <span>Free</span>
+              <div className="flex justify-between text-[#9E9E9E]">
+                <span>White Glove Courier</span>
+                <span className="text-[#D4AF37] uppercase tracking-wider font-semibold">Complimentary</span>
               </div>
-              <div className="border-t border-border pt-2 dark:border-border-dark">
-                <div className="flex justify-between font-semibold">
-                  <span>Estimated Total</span>
-                  <span>{formatPrice(cartTotal)}</span>
+              <div className="flex justify-between text-[#9E9E9E]">
+                <span>Policy Evaluation</span>
+                <span className="text-emerald-400">Approved</span>
+              </div>
+
+              <div className="border-t border-[rgba(255,255,255,0.08)] pt-4">
+                <div className="flex items-baseline justify-between">
+                  <span className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-[#E5E2E3]">
+                    Estimated Total
+                  </span>
+                  <span className="font-sans text-2xl font-semibold text-[#D4AF37]">
+                    {formatPrice(cartTotal)}
+                  </span>
                 </div>
               </div>
             </div>
-            <Link to="/checkout" className="mt-6 block">
-              <Button variant="ai" className="w-full">
-                Proceed to Checkout
+
+            <Link to="/checkout" className="block pt-2">
+              <Button variant="primary" size="lg" className="w-full gap-2">
+                <span>Proceed to Authorization</span>
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-          </Card>
+
+            <div className="pt-2 text-center text-[10px] text-[#737373] tracking-wide">
+              <span>Razorpay encrypted test transaction rail</span>
+            </div>
+          </div>
         </div>
       </div>
     </BuyerLayout>

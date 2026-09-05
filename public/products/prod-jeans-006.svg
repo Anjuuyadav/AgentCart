@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="title-prod-jeans-006">
+  <title id="title-prod-jeans-006">White Cropped Flare Jeans</title>
+  <rect width="800" height="1000" fill="#f4f0e8"/>
+  <rect x="60" y="60" width="680" height="780" rx="32" fill="#ffffff" opacity=".56"/>
+  <circle cx="690" cy="138" r="100" fill="#d7c4ee" opacity=".17"/>
+  <circle cx="122" cy="760" r="120" fill="#7d1f35" opacity=".10"/>
+  <path d="M290 230h220l-24 510H396l-18-285-42 285h-90z" fill="#9b6c1c"/><path d="M314 280h172" stroke="#d7c4ee" stroke-width="14"/><path d="M396 270v430" stroke="#7d1f35" stroke-width="12" opacity=".75"/>
+  <path d="M190 852h420" stroke="#9b6c1c" stroke-width="2" opacity=".32"/>
+  <text x="400" y="895" text-anchor="middle" fill="#26231f" font-family="Georgia, serif" font-size="25">White Cropped Flare Jeans</text>
+  <text x="400" y="930" text-anchor="middle" fill="#716b62" font-family="Arial, sans-serif" font-size="13" letter-spacing="3">AGENTCART ATELIER</text>
+</svg>

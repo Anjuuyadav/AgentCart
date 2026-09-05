@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="title-prod-shirt-002">
+  <title id="title-prod-shirt-002">Navy Slim Fit Poplin Shirt</title>
+  <rect width="800" height="1000" fill="#f0f4f6"/>
+  <rect x="60" y="60" width="680" height="780" rx="32" fill="#ffffff" opacity=".56"/>
+  <circle cx="690" cy="138" r="100" fill="#f1d2a6" opacity=".17"/>
+  <circle cx="122" cy="760" r="120" fill="#9b6c1c" opacity=".10"/>
+  <path d="M300 250h200l90 92-67 66-39-48v390H316V360l-39 48-67-66z" fill="#355b8c"/><path d="M355 250c11 30 27 45 45 45s34-15 45-45" fill="#9b6c1c"/><path d="M330 505h140" stroke="#f1d2a6" stroke-width="14" opacity=".7"/><path d="M210 342l-58 182 92 26 72-154" fill="#9b6c1c"/><path d="M590 342l58 182-92 26-72-154" fill="#9b6c1c"/>
+  <path d="M190 852h420" stroke="#355b8c" stroke-width="2" opacity=".32"/>
+  <text x="400" y="895" text-anchor="middle" fill="#26231f" font-family="Georgia, serif" font-size="25">Navy Slim Fit Poplin Shirt</text>
+  <text x="400" y="930" text-anchor="middle" fill="#716b62" font-family="Arial, sans-serif" font-size="13" letter-spacing="3">AGENTCART ATELIER</text>
+</svg>

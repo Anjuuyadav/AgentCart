@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="title-prod-party-wear-004">
+  <title id="title-prod-party-wear-004">Silver Metallic Halter Jumpsuit</title>
+  <rect width="800" height="1000" fill="#f0f4f6"/>
+  <rect x="60" y="60" width="680" height="780" rx="32" fill="#ffffff" opacity=".56"/>
+  <circle cx="690" cy="138" r="100" fill="#f1d2a6" opacity=".17"/>
+  <circle cx="122" cy="760" r="120" fill="#9b6c1c" opacity=".10"/>
+  <path d="M330 230h140l28 104 112 420H190l112-420z" fill="#355b8c"/><path d="M330 230c22-38 42-56 70-56s48 18 70 56" fill="none" stroke="#f1d2a6" stroke-width="15"/><path d="M330 334h140l-22 230H352z" fill="#9b6c1c" opacity=".48"/><path d="M242 754h316" stroke="#f1d2a6" stroke-width="11" opacity=".75"/>
+  <path d="M190 852h420" stroke="#355b8c" stroke-width="2" opacity=".32"/>
+  <text x="400" y="895" text-anchor="middle" fill="#26231f" font-family="Georgia, serif" font-size="25">Silver Metallic Halter Jumpsuit</text>
+  <text x="400" y="930" text-anchor="middle" fill="#716b62" font-family="Arial, sans-serif" font-size="13" letter-spacing="3">AGENTCART ATELIER</text>
+</svg>

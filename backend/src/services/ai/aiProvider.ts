@@ -52,21 +52,32 @@ class MockAIProvider implements AIProviderInterface {
     const requirements: ExtractedRequirements = {};
 
     // Demo request detection: "I need a wine-colored wedding dress under ₹5,000, size M."
-    if (query.includes('wedding') && query.includes('dress')) {
-      requirements.category = 'wedding-dresses';
-      requirements.occasion = 'wedding';
-    } else if (query.includes('dress')) {
-      requirements.category = 'dresses';
-    } else if (query.includes('saree')) {
-      requirements.category = 'sarees';
-    } else if (query.includes('kurti')) {
-      requirements.category = 'kurtis';
-    }
+    const categoryMatchers: Array<[RegExp, string]> = [
+      [/wedding.*dress|bridal.*dress/i, 'wedding-dresses'],
+      [/party.*dress|party wear|cocktail/i, 'party-wear'],
+      [/wedding accessory|maang tikka|bridal belt|hair vine/i, 'wedding-accessories'],
+      [/t-?shirt|\btee\b/i, 't-shirts'],
+      [/saree/i, 'sarees'],
+      [/kurti/i, 'kurtis'],
+      [/handbag|bag|clutch|tote/i, 'handbags'],
+      [/earring|jhumka|chandbali/i, 'earrings'],
+      [/necklace|choker|pendant/i, 'necklaces'],
+      [/sneaker|trainer|shoe|juttis|pumps|oxford/i, 'shoes'],
+      [/jacket|blazer|coat|puffer/i, 'jackets'],
+      [/trouser|cargo|slacks/i, 'trousers'],
+      [/jeans|denim/i, 'jeans'],
+      [/shirt/i, 'shirts'],
+      [/dress/i, 'dresses'],
+    ];
+    const categoryMatch = categoryMatchers.find(([pattern]) => pattern.test(query));
+    if (categoryMatch) requirements.category = categoryMatch[1];
+    if (query.includes('wedding')) requirements.occasion = 'wedding';
 
     // Extract budget
-    const priceMatch = query.match(/under\s*[₹\$]?\s*(\d+)/i);
+    // Accept a currency symbol/code but do not depend on its transport encoding.
+    const priceMatch = query.match(/under\s*\D*([\d,]+)/i);
     if (priceMatch) {
-      requirements.budget = parseInt(priceMatch[1], 10);
+      requirements.budget = parseInt(priceMatch[1].replace(/,/g, ''), 10);
     }
 
     // Extract color - prioritize wine/burgundy shades
